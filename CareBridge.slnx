@@ -28,4 +28,10 @@
     <Project Path="Services/UserService/UserService.Domain/UserService.Domain.csproj" />
     <Project Path="Services/UserService/UserService.Infrastructure/UserService.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="docker-compose.yml" />
+  </Folder>
 </Solution>
