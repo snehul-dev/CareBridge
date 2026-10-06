@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CareService.Application\CareService.Application.csproj" />
+    <ProjectReference Include="..\CareService.Domain\CareService.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

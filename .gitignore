@@ -1,0 +1,49 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+[Ll]og/
+[Ll]ogs/
+
+# .NET
+artifacts/
+*.nupkg
+*.snupkg
+
+# User secrets
+secrets.json
+
+# Environment files
+.env
+.env.*
+
+# Node / React
+node_modules/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Test results
+TestResults/
+[Tt]est[Rr]esult*/
+
+# Docker
+docker-compose.override.yml

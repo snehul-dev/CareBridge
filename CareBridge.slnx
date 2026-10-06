@@ -1,0 +1,31 @@
+<Solution>
+  <Folder Name="/ApiGateway/">
+    <Project Path="ApiGateway/CareBridge.ApiGateway/CareBridge.ApiGateway.csproj" />
+  </Folder>
+  <Folder Name="/BuildingBlocks/" />
+  <Folder Name="/BuildingBlocks/Contracts/">
+    <Project Path="BuildingBlocks/Contracts/CareBridge.Contracts/CareBridge.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/BuildingBlocks/Shared/">
+    <Project Path="BuildingBlocks/Shared/CareBridge.Shared/CareBridge.Shared.csproj" />
+  </Folder>
+  <Folder Name="/Services/" />
+  <Folder Name="/Services/AppointmentService/">
+    <Project Path="Services/AppointmentService/AppointmentService.Api/AppointmentService.Api.csproj" />
+    <Project Path="Services/AppointmentService/AppointmentService.Application/AppointmentService.Application.csproj" />
+    <Project Path="Services/AppointmentService/AppointmentService.Domain/AppointmentService.Domain.csproj" />
+    <Project Path="Services/AppointmentService/AppointmentService.Infrastructure/AppointmentService.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Services/CareService/">
+    <Project Path="Services/CareService/CareService.Api/CareService.Api.csproj" />
+    <Project Path="Services/CareService/CareService.Application/CareService.Application.csproj" />
+    <Project Path="Services/CareService/CareService.Domain/CareService.Domain.csproj" />
+    <Project Path="Services/CareService/CareService.Infrastructure/CareService.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Services/UserService/">
+    <Project Path="Services/UserService/UserService.Api/UserService.Api.csproj" />
+    <Project Path="Services/UserService/UserService.Application/UserService.Application.csproj" />
+    <Project Path="Services/UserService/UserService.Domain/UserService.Domain.csproj" />
+    <Project Path="Services/UserService/UserService.Infrastructure/UserService.Infrastructure.csproj" />
+  </Folder>
+</Solution>
