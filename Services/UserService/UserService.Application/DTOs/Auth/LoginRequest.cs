@@ -4,7 +4,7 @@ using System.Text;
 
 namespace UserService.Application.DTOs.Auth
 {
-    internal class LoginRequest
+    public class LoginRequest
     {
     }
 }
