@@ -26,6 +26,7 @@ namespace UserService.Infrastructure.Persistence
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
             modelBuilder.ApplyConfigurationsFromAssembly(
                 typeof(UserDbContext).Assembly);
         }

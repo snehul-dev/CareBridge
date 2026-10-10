@@ -14,6 +14,7 @@ namespace UserService.Application.Validators
                 .NotEmpty()
                 .EmailAddress()
                 .WithMessage("Please enter the valid email");
+
             RuleFor(x => x.Password)
                 .NotEmpty()
                 .MinimumLength(6)
@@ -24,6 +25,24 @@ namespace UserService.Application.Validators
                 .WithMessage("Password must contain at least one digit")
                 .Matches(@"[^A-Za-z\d]")
                 .WithMessage("Password must contain at least one special character.");
+
+            RuleFor(x => x.FirstName)
+                .NotEmpty()
+                .WithMessage("First name is required.")
+                .MinimumLength(2)
+                .WithMessage("First name must be at least 2 characters.");
+
+            RuleFor(x => x.LastName)
+                .NotEmpty()
+                .WithMessage("Last name is required.")
+                .MinimumLength(2)
+                .WithMessage("Last name must be at least 2 characters."); 
+
+            RuleFor(x => x.PhoneNumber)
+                .NotEmpty().
+                MinimumLength(4)
+                .WithMessage("");
+
 
         }
     }

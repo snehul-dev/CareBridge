@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace UserService.Application.Interfaces
+namespace UserService.Application.Services
 {
-    internal interface IUserService
+    internal class AuthService
     {
     }
 }

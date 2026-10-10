@@ -1,10 +1,21 @@
-﻿using System;
+﻿using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Collections.Generic;
 using System.Text;
+using UserService.Application.Validators;
 
 namespace UserService.Application
 {
-    internal class DependencyInjection
+    public static  class DependencyInjection
     {
+      public static IServiceCollection AddApplication(
+          this IServiceCollection services
+          )
+        {
+            services.AddValidatorsFromAssemblyContaining<RegisterUserValidator>();
+
+            return services;
+        }
     }
 }
