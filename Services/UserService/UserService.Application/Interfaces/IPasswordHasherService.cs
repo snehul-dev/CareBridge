@@ -4,7 +4,8 @@ using System.Text;
 
 namespace UserService.Application.Interfaces
 {
-    internal interface IPasswordHasherService
+    public interface IPasswordHasherService
     {
+        string HashPassword(string password);
     }
 }

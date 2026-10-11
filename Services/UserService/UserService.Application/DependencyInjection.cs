@@ -1,8 +1,10 @@
-﻿using FluentValidation;
+﻿using AutoMapper;
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using UserService.Application.Mappings;
 using UserService.Application.Validators;
 
 namespace UserService.Application
@@ -13,7 +15,13 @@ namespace UserService.Application
           this IServiceCollection services
           )
         {
-            services.AddValidatorsFromAssemblyContaining<RegisterUserValidator>();
+            services.AddValidatorsFromAssemblyContaining<RegisterPatientValidator>();
+            services.AddValidatorsFromAssemblyContaining<RegisterDoctorValidator>();
+
+            services.AddAutoMapper(typeof(UserMappingProfile));
+
+           
+
 
             return services;
         }

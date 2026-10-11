@@ -12,6 +12,7 @@ namespace UserService.Infrastructure.Persistence.Configurations
         public void Configure(EntityTypeBuilder<DoctorProfile> builder)
         {
             builder.HasKey(x => x.Id);
+
             builder.HasOne(x => x.User)
                 .WithOne(x => x.DoctorProfile)
                 .HasForeignKey<DoctorProfile>(x => x.UserId);
@@ -42,12 +43,24 @@ namespace UserService.Infrastructure.Persistence.Configurations
                 .IsRequired()
                 .HasPrecision(10, 2);
 
+            builder.Property(x => x.City)
+                .HasMaxLength(100);
+
+            builder.Property(x => x.District)
+                .HasMaxLength(100);
+
             builder.Property(x => x.Bio)
                 .HasMaxLength(1000);
 
             builder.Property(x => x.IsVerified)
                 .IsRequired()
                 .HasDefaultValue(false);
+
+            builder.Property(x => x.CreatedAt)
+            .IsRequired();
+
+            builder.Property(x => x.UpdatedAt)
+                .IsRequired();
         }
     }
 }

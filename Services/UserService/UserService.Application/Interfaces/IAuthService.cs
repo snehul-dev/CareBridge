@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using UserService.Application.DTOs.Auth;
 
 namespace UserService.Application.Interfaces
 {
-    internal interface IAuth
+    public interface IAuthService
     {
+        Task RegisterPatientAsync(RegisterPatientRequest request);
+        Task RegisterDoctorAsync(RegisterDoctorRequest request);
     }
 }

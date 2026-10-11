@@ -1,3 +1,4 @@
+using UserService.Api.Middleware;
 using UserService.Application;
 using UserService.Infrastructure;
 
@@ -9,7 +10,10 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddApplication();
 
+
 var app = builder.Build();
+
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseHttpsRedirection();
 

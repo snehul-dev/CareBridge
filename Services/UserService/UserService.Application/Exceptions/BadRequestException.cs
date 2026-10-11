@@ -4,7 +4,11 @@ using System.Text;
 
 namespace UserService.Application.Exceptions
 {
-    internal class BadRequestException
+    public class BadRequestException:Exception
     {
+        public BadRequestException(string message):base(message)
+        {
+
+        }
     }
 }
