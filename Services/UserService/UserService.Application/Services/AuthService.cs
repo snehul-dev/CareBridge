@@ -1,126 +1,422 @@
-﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿
+using AutoMapper;
 using UserService.Application.DTOs.Auth;
 using UserService.Application.Exceptions;
 using UserService.Application.Interfaces;
 using UserService.Domain.Entities;
 
-namespace UserService.Application.Services
+namespace UserService.Application.Services;
+
+public class AuthService : IAuthService
 {
-    public class AuthService : IAuthService
+    private readonly IUserRepository _userRepository;
+    private readonly IPasswordHasherService _passwordHasher;
+    private readonly IMapper _mapper;
+    private readonly IRoleRepository _roleRepository;
+    private readonly IJwtService _jwtservice;
+    private readonly IRefreshTokenRepository _refreshTokenRepository;
+
+    public AuthService(
+        IUserRepository userRepository,
+        IPasswordHasherService passwordHasher,
+        IMapper mapper,
+        IJwtService jwtService,
+        IRefreshTokenRepository refreshTokenRepository,
+        IRoleRepository roleRepository)
     {
-        private readonly IUserRepository _userRepository;
-        private readonly IPasswordHasherService _passwordHasher;
-        private readonly IMapper _mapper;
-        private readonly IRoleRepository _roleRepository;
-        
-      
+        _userRepository = userRepository;
+        _passwordHasher = passwordHasher;
+        _refreshTokenRepository = refreshTokenRepository;
+        _mapper = mapper;
+        _roleRepository = roleRepository;
+        _jwtservice = jwtService;
+    }
 
-        public AuthService(IUserRepository userRepository ,
-            IPasswordHasherService passwordHasher,
-            IMapper mapper,
-            IRoleRepository roleRepository
-            
-            )
-        {
-            _userRepository = userRepository;
-            _passwordHasher = passwordHasher;
-            _mapper = mapper;
-            _roleRepository = roleRepository;
-            
-        }
-        public async Task RegisterPatientAsync(RegisterPatientRequest request)
-        {
-            var existingEmail = await _userRepository.GetByEmailAsync(request.Email);
+    // Patient Registration
 
-            if(existingEmail != null)
+    public async Task RegisterPatientAsync(RegisterPatientRequest request)
+    {
+        var email = request.Email.Trim();
+        var now = DateTime.UtcNow;
+
+        var patientRole = await _roleRepository.GetRoleByName("Patient")
+            ?? throw new NotFoundException(
+                "Patient role is not configured in the database.");
+
+        var existingUser = await _userRepository.GetByEmailAsync(email);
+
+        if (existingUser != null)
+        {
+            var roles = GetRoleNames(existingUser);
+
+            if (roles.Contains("Admin") || roles.Contains("Lab"))
             {
-                throw new BadRequestException("An account with this email already exists.");
+                throw new BadRequestException(
+                    "This email cannot be used for Patient registration.");
             }
 
-            var patientRole = await _roleRepository.GetRoleByName("Patient");
-
-            if(patientRole == null)
+            if (roles.Contains("Patient"))
             {
-                throw new NotFoundException("Patient role is not configured in the database.");
+                throw new BadRequestException(
+                    "A Patient account already exists for this email.");
             }
 
-            var user = _mapper.Map<User>(request);
-            user.Id = Guid.NewGuid();
-            user.PasswordHash = _passwordHasher.HashPassword(request.Password);
-            user.IsActive = true;
-            user.CreatedAt = DateTime.UtcNow;
-
-            user.UserRoles.Add(new UserRole
+            if (!roles.Contains("Doctor"))
             {
-                UserId = user.Id,
+                throw new BadRequestException(
+                    "This email cannot be reused for Patient registration.");
+            }
+
+            if (!_passwordHasher.VerifyPassword(
+                    request.Password, existingUser.PasswordHash))
+            {
+                throw new BadRequestException(
+                    "The password does not match the existing account.");
+            }
+
+            if (existingUser.PatientProfile != null)
+            {
+                throw new BadRequestException(
+                    "A Patient profile already exists for this account.");
+            }
+
+            existingUser.UserRoles.Add(new UserRole
+            {
+                UserId = existingUser.Id,
                 RoleId = patientRole.Id
-                
             });
 
-            var patientProfile = new PatientProfile
+            existingUser.PatientProfile = new PatientProfile
             {
                 Id = Guid.NewGuid(),
-                UserId = user.Id,
+                UserId = existingUser.Id,
                 BloodGroup = null,
                 EmergencyContactName = null,
                 MedicalHistory = null,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                CreatedAt = now,
+                UpdatedAt = now
             };
 
-            user.PatientProfile = patientProfile;
+            existingUser.UpdatedAt = now;
 
-            await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
-
+            return;
         }
 
-       public async Task RegisterDoctorAsync(RegisterDoctorRequest request)
+        var user = _mapper.Map<User>(request);
+        user.Id = Guid.NewGuid();
+        user.Email = email;
+        user.PasswordHash = _passwordHasher.HashPassword(request.Password);
+        user.IsActive = true;
+        user.CreatedAt = now;
+        user.UpdatedAt = now;
+
+        user.UserRoles.Add(new UserRole
         {
-            var existingDoctor = await _userRepository.GetByEmailAsync(request.Email);
+            UserId = user.Id,
+            RoleId = patientRole.Id
+        });
 
-            if(existingDoctor != null)
+        user.PatientProfile = new PatientProfile
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            BloodGroup = null,
+            EmergencyContactName = null,
+            MedicalHistory = null,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        await _userRepository.AddAsync(user);
+        await _userRepository.SaveChangesAsync();
+    }
+
+    // DOCTOR REGISTRATION 
+
+    public async Task RegisterDoctorAsync(RegisterDoctorRequest request)
+    {
+        var email = request.Email.Trim();
+        var now = DateTime.UtcNow;
+
+        var doctorRole = await _roleRepository.GetRoleByName("Doctor")
+            ?? throw new NotFoundException(
+                "Doctor role is not configured in the database.");
+
+        var existingUser = await _userRepository.GetByEmailAsync(email);
+
+        if (existingUser != null)
+        {
+            var roles = GetRoleNames(existingUser);
+
+            if (roles.Contains("Admin") || roles.Contains("Lab"))
             {
-                throw new BadRequestException("An account with this email already exists.");
-
+                throw new BadRequestException(
+                    "This email cannot be used for Doctor registration.");
             }
 
-            var doctorRole = await _roleRepository.GetRoleByName("Doctor");
-
-            if(doctorRole == null)
+            if (roles.Contains("Doctor"))
             {
-                throw new NotFoundException("Doctor role is not configured in the database.");
-
+                throw new BadRequestException(
+                    "A Doctor account already exists for this email.");
             }
 
-            var user = _mapper.Map<User>(request);
-            user.Id = Guid.NewGuid();
-            user.PasswordHash = _passwordHasher.HashPassword(request.Password);
-            user.IsActive = false;
-            user.CreatedAt = DateTime.UtcNow;
-            user.UpdatedAt = DateTime.UtcNow;
-
-            user.UserRoles.Add(new UserRole
+            if (!roles.Contains("Patient"))
             {
-                UserId = user.Id,
-                RoleId = doctorRole.Id
-            });
+                throw new BadRequestException(
+                    "This email cannot be reused for Doctor registration.");
+            }
+
+            if (!_passwordHasher.VerifyPassword(
+                    request.Password, existingUser.PasswordHash))
+            {
+                throw new BadRequestException(
+                    "The password does not match the existing account.");
+            }
+
+            if (existingUser.DoctorProfile != null)
+            {
+                throw new BadRequestException(
+                    "A Doctor profile already exists for this account.");
+            }
 
             var doctorProfile = _mapper.Map<DoctorProfile>(request);
             doctorProfile.Id = Guid.NewGuid();
-            doctorProfile.UserId = user.Id;
+            doctorProfile.UserId = existingUser.Id;
             doctorProfile.IsVerified = false;
-            doctorProfile.CreatedAt = DateTime.UtcNow;
-            doctorProfile.UpdatedAt = DateTime.UtcNow;
+            doctorProfile.CreatedAt = now;
+            doctorProfile.UpdatedAt = now;
 
-            user.DoctorProfile = doctorProfile;
+            existingUser.UserRoles.Add(new UserRole
+            {
+                UserId = existingUser.Id,
+                RoleId = doctorRole.Id
+            });
 
-            await _userRepository.AddAsync(user);
+            existingUser.DoctorProfile = doctorProfile;
+            existingUser.UpdatedAt = now;
+
             await _userRepository.SaveChangesAsync();
-
+            return;
         }
+
+        var user = _mapper.Map<User>(request);
+        user.Id = Guid.NewGuid();
+        user.Email = email;
+        user.PasswordHash = _passwordHasher.HashPassword(request.Password);
+        user.IsActive = true;
+        user.CreatedAt = now;
+        user.UpdatedAt = now;
+
+        user.UserRoles.Add(new UserRole
+        {
+            UserId = user.Id,
+            RoleId = doctorRole.Id
+        });
+
+        var profile = _mapper.Map<DoctorProfile>(request);
+        profile.Id = Guid.NewGuid();
+        profile.UserId = user.Id;
+        profile.IsVerified = false;
+        profile.CreatedAt = now;
+        profile.UpdatedAt = now;
+
+        user.DoctorProfile = profile;
+
+        await _userRepository.AddAsync(user);
+        await _userRepository.SaveChangesAsync();
+    }
+
+    // LAB REGISTRATION 
+
+    public async Task RegisterLabAsync(RegisterLabRequest request)
+    {
+        var email = request.Email.Trim();
+        var now = DateTime.UtcNow;
+
+        var existingUser = await _userRepository.GetByEmailAsync(email);
+
+        if (existingUser != null)
+        {
+            throw new BadRequestException(
+                "This email is already in use. Lab registration requires a unique email.");
+        }
+
+        var labRole = await _roleRepository.GetRoleByName("Lab")
+            ?? throw new NotFoundException(
+                "Lab role is not configured in the database.");
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = email,
+            PhoneNumber = request.PhoneNumber.Trim(),
+            PasswordHash = _passwordHasher.HashPassword(request.Password),
+            IsActive = true,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        user.UserRoles.Add(new UserRole
+        {
+            UserId = user.Id,
+            RoleId = labRole.Id
+        });
+
+        var labProfile = _mapper.Map<LabProfile>(request);
+        labProfile.Id = Guid.NewGuid();
+        labProfile.UserId = user.Id;
+        labProfile.IsVerified = false;
+        labProfile.CreatedAt = now;
+        labProfile.UpdatedAt = now;
+
+        user.LabProfile = labProfile;
+
+        await _userRepository.AddAsync(user);
+        await _userRepository.SaveChangesAsync();
+    }
+
+    //HELPERS 
+
+    private static HashSet<string> GetRoleNames(User user)
+    {
+        return user.UserRoles
+            .Where(ur => ur.Role != null)
+            .Select(ur => ur.Role.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    public async Task<LoginResponse> LoginAsync(LoginRequest request)
+    {
+
+        if (request is null)
+            throw new BadRequestException("Login request is required.");
+
+        if (string.IsNullOrWhiteSpace(request.Email) ||
+            string.IsNullOrWhiteSpace(request.Password))
+        {
+            throw new BadRequestException("Email and password are required.");
+        }
+        var allowedRoles = new[]
+           {
+                "Patient",
+                "Doctor",
+                "Lab",
+                "Admin"
+            };
+
+        var role = allowedRoles.FirstOrDefault(r =>
+            r.Equals(
+                request.Role?.Trim(),
+                StringComparison.OrdinalIgnoreCase));
+
+        if (role is null)
+        {
+            throw new BadRequestException(
+                "Please select a valid role.");
+        }
+
+        //  Find the user
+        var email = request.Email.Trim();
+
+        var user = await _userRepository.GetByEmailAsync(email);
+
+        if (user is null)
+        {
+            throw new BadRequestException(
+                "Invalid email or password.");
+        }
+
+        //  Verify BCrypt password
+        var passwordValid = _passwordHasher.VerifyPassword(
+            request.Password,
+            user.PasswordHash);
+
+        if (!passwordValid)
+        {
+            throw new BadRequestException(
+                "Invalid email or password.");
+        }
+
+        //  Check account status
+        if (!user.IsActive)
+        {
+            throw new BadRequestException(
+                "Your account is inactive.");
+        }
+
+        //  Verify that the selected role belongs to the user
+        var hasSelectedRole = user.UserRoles.Any(ur =>
+            ur.Role != null &&
+            ur.Role.Name.Equals(
+                role,
+                StringComparison.OrdinalIgnoreCase));
+
+        if (!hasSelectedRole)
+        {
+            throw new BadRequestException(
+                "The selected role is not assigned to your account.");
+        }
+
+        //  Verify Doctor approval only when logging in as Doctor
+        if (role == "Doctor")
+        {
+            if (user.DoctorProfile is null ||
+                !user.DoctorProfile.IsVerified)
+            {
+                throw new BadRequestException(
+                    "Your doctor account is awaiting verification.");
+            }
+        }
+
+        //  Verify Lab approval only when logging in as Lab
+        if (role == "Lab")
+        {
+            if (user.LabProfile is null ||
+                !user.LabProfile.IsVerified)
+            {
+                throw new BadRequestException(
+                    "Your lab account is awaiting verification.");
+            }
+        }
+
+        //  Generate JWT for the selected role
+        var (accessToken, expiresAt) = _jwtservice.GenerateAccessToken(
+                user.Id,
+                user.Email,
+                role);
+
+        // generate refresh token
+
+        var rawRefreshToken = RefreshTokenHelper.Generate();
+
+        var now = DateTime.UtcNow;
+
+        //  Store only the refresh-token hash
+        var refreshToken = new RefreshToken
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            TokenHash = RefreshTokenHelper.Hash(rawRefreshToken),
+            Role = role,
+            CreatedAt = now,
+            ExpiresAt = now.AddDays(7),
+            RevokedAt = null
+        };
+
+        await _refreshTokenRepository.AddAsync(refreshToken);
+        await _refreshTokenRepository.SaveChangesAsync();
+
+        //return token to client
+
+        return new LoginResponse
+        {
+            UserId = user.Id,
+            Email = user.Email,
+            Role = role,
+            AccessToken = accessToken,
+            AccessTokenExpiresAt = expiresAt,
+            RefreshToken = rawRefreshToken
+        };
     }
 }

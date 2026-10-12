@@ -24,18 +24,46 @@ namespace UserService.Infrastructure.Repositories
 
         public async Task<User?> GetByEmailAsync(string email)
         {
-            return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-         
+            return await _context.Users
+              .Include(u => u.UserRoles)
+              .ThenInclude(ur => ur.Role)
+              .Include(u => u.PatientProfile)
+              .Include(u => u.DoctorProfile)
+              .Include(u => u.LabProfile)
+              .FirstOrDefaultAsync(u => u.Email == email);
+
         }
 
         public async Task<User?> GetByIdAsync(Guid id)
         {
-            return await _context.Users.FirstOrDefaultAsync(x => x.Id == id);
+            return await _context.Users
+                        .Include(u => u.UserRoles)
+                            .ThenInclude(ur => ur.Role)
+                        .Include(u => u.PatientProfile)
+                        .Include(u => u.DoctorProfile)
+                        .Include(u => u.LabProfile)
+                        .FirstOrDefaultAsync(u => u.Id == id);
         }
 
         public async Task SaveChangesAsync()
         {
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                foreach (var entry in ex.Entries)
+                {
+                    Console.WriteLine(
+                        $"Entity: {entry.Metadata.ClrType.Name}");
+
+                    Console.WriteLine(
+                        $"State: {entry.State}");
+                }
+
+                throw;
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+﻿
 using Microsoft.AspNetCore.Mvc;
 using UserService.Application.DTOs.Auth;
 using UserService.Application.Interfaces;
@@ -15,19 +15,22 @@ namespace UserService.Api.Controllers
         private readonly RegisterPatientValidator _patientvalidator;
         private readonly RegisterDoctorValidator _doctorvalidator;
         private readonly IAuthService _authService;
+        private readonly RegisterLabValidator _labvalidator;
       
         public AuthController(RegisterPatientValidator patientvalidator,
             RegisterDoctorValidator doctorvalidator,
+            RegisterLabValidator labvalidator,
             IAuthService authService
             )
         {
             _patientvalidator = patientvalidator;
             _doctorvalidator = doctorvalidator;
+            _labvalidator = labvalidator;
             _authService = authService;
            
         }
         [HttpPost("Register/Patient")]
-        public async Task<IActionResult> RegisterUser(RegisterPatientRequest request)
+        public async Task<IActionResult> RegisterPatient(RegisterPatientRequest request)
         {
             var validationResult = await _patientvalidator.ValidateAsync(request);
 
@@ -73,6 +76,32 @@ namespace UserService.Api.Controllers
             {
                 message = "Doctor registration submitted successfully. Awaiting admin verification."
             });
+        }
+
+        [HttpPost("Register/Lab")]
+        public async Task<IActionResult> RegisterLabAsync(RegisterLabRequest request)
+        {
+            var validationResult = await _labvalidator.ValidateAsync(request);
+
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult.Errors.Select(
+                      error => new
+                      {
+                          Field = error.PropertyName,
+                          Message = error.ErrorMessage
+                      }
+                    ));
+            }
+
+            await _authService.RegisterLabAsync(request);
+
+            return Created("", new
+            {
+                message = "Lab registration submitted successfully. Awaiting admin verification."
+
+            });
+
         }
 
     }

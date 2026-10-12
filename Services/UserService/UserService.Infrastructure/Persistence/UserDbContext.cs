@@ -21,6 +21,7 @@ namespace UserService.Infrastructure.Persistence
         public DbSet<LabProfile> LabProfiles { get; set; }
         public DbSet<Specialization> Specializations { get; set; }
         public DbSet<Address> Address { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

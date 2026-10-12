@@ -17,10 +17,15 @@ namespace UserService.Application
         {
             services.AddValidatorsFromAssemblyContaining<RegisterPatientValidator>();
             services.AddValidatorsFromAssemblyContaining<RegisterDoctorValidator>();
+            services.AddValidatorsFromAssemblyContaining<RegisterLabValidator>();
 
-            services.AddAutoMapper(typeof(UserMappingProfile));
+            services.AddAutoMapper(
+             cfg => { },
+             typeof(UserMappingProfile).Assembly);
 
-           
+
+
+
 
 
             return services;

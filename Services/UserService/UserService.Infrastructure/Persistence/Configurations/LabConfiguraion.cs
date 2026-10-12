@@ -34,6 +34,36 @@ namespace UserService.Infrastructure.Persistence.Configurations
             builder.Property(x => x.Description)
                 .HasMaxLength(1000);
 
+            builder.Property(x => x.AddressLine)
+                .IsRequired()
+                .HasMaxLength(250);
+
+            builder.Property(x => x.City)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            builder.Property(x => x.District)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            builder.Property(x => x.State)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            builder.Property(x => x.Bio)
+                .HasMaxLength(1000);
+
+            builder.Property(x => x.IsVerified)
+                .IsRequired()
+                .HasDefaultValue(false);
+
+            builder.Property(x => x.CreatedAt)
+            .IsRequired();
+
+            builder.Property(x => x.UpdatedAt)
+                .IsRequired();
+
+
         }
     }
 }

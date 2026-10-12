@@ -9,5 +9,8 @@ namespace UserService.Application.Interfaces
     {
         Task RegisterPatientAsync(RegisterPatientRequest request);
         Task RegisterDoctorAsync(RegisterDoctorRequest request);
+        Task RegisterLabAsync(RegisterLabRequest request);
+
+        Task<LoginResponse> LoginAsync(LoginRequest request);
     }
 }
