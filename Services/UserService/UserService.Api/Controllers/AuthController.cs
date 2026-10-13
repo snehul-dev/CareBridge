@@ -9,14 +9,14 @@ namespace UserService.Api.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
-    public class AuthController:ControllerBase
+    public class AuthController : ControllerBase
     {
 
         private readonly RegisterPatientValidator _patientvalidator;
         private readonly RegisterDoctorValidator _doctorvalidator;
         private readonly IAuthService _authService;
         private readonly RegisterLabValidator _labvalidator;
-      
+
         public AuthController(RegisterPatientValidator patientvalidator,
             RegisterDoctorValidator doctorvalidator,
             RegisterLabValidator labvalidator,
@@ -27,7 +27,7 @@ namespace UserService.Api.Controllers
             _doctorvalidator = doctorvalidator;
             _labvalidator = labvalidator;
             _authService = authService;
-           
+
         }
         [HttpPost("Register/Patient")]
         public async Task<IActionResult> RegisterPatient(RegisterPatientRequest request)
@@ -52,7 +52,7 @@ namespace UserService.Api.Controllers
 
             });
 
-            
+
         }
 
         [HttpPost("Register/Doctor")]
@@ -102,6 +102,12 @@ namespace UserService.Api.Controllers
 
             });
 
+        }
+        [HttpPost("Login")]
+        public async Task<IActionResult> LoginAsync(LoginRequest request)
+        {
+           var response = await _authService.LoginAsync(request);
+            return Ok(response);
         }
 
     }

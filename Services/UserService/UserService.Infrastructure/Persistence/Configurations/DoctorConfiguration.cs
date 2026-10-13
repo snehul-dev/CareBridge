@@ -60,7 +60,8 @@ namespace UserService.Infrastructure.Persistence.Configurations
             .IsRequired();
 
             builder.Property(x => x.UpdatedAt)
-                .IsRequired();
+                .IsRequired(false);
+
         }
     }
 }

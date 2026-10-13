@@ -19,7 +19,7 @@ namespace UserService.Domain.Entities
         public string? Bio { get; set; } 
         public bool IsVerified { get; set; }
         public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
 
         public User User { get; set; } = null!;
         public Specialization Specialization { get; set; } = null!;

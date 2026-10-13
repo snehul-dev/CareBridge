@@ -83,7 +83,7 @@ public class AuthService : IAuthService
             existingUser.UserRoles.Add(new UserRole
             {
                 UserId = existingUser.Id,
-                RoleId = patientRole.Id
+                RoleId = patientRole.Id 
             });
 
             existingUser.PatientProfile = new PatientProfile
@@ -94,7 +94,7 @@ public class AuthService : IAuthService
                 EmergencyContactName = null,
                 MedicalHistory = null,
                 CreatedAt = now,
-                UpdatedAt = now
+                UpdatedAt = null
             };
 
             existingUser.UpdatedAt = now;
@@ -109,7 +109,7 @@ public class AuthService : IAuthService
         user.PasswordHash = _passwordHasher.HashPassword(request.Password);
         user.IsActive = true;
         user.CreatedAt = now;
-        user.UpdatedAt = now;
+        user.UpdatedAt = null;
 
         user.UserRoles.Add(new UserRole
         {
@@ -125,7 +125,7 @@ public class AuthService : IAuthService
             EmergencyContactName = null,
             MedicalHistory = null,
             CreatedAt = now,
-            UpdatedAt = now
+            UpdatedAt = null
         };
 
         await _userRepository.AddAsync(user);
@@ -195,6 +195,8 @@ public class AuthService : IAuthService
 
             existingUser.DoctorProfile = doctorProfile;
             existingUser.UpdatedAt = now;
+
+
 
             await _userRepository.SaveChangesAsync();
             return;

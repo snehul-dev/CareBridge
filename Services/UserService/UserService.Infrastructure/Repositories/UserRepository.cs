@@ -45,25 +45,26 @@ namespace UserService.Infrastructure.Repositories
                         .FirstOrDefaultAsync(u => u.Id == id);
         }
 
-        public async Task SaveChangesAsync()
+
+public async Task SaveChangesAsync()
         {
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                foreach (var entry in ex.Entries)
-                {
-                    Console.WriteLine(
-                        $"Entity: {entry.Metadata.ClrType.Name}");
+            var entries = _context.ChangeTracker
+                .Entries<DoctorProfile>()
+                .ToList();
 
-                    Console.WriteLine(
-                        $"State: {entry.State}");
-                }
+            foreach (var entry in entries)
+            {
+                Console.WriteLine(
+                    $"DoctorProfile State: {entry.State}");
 
-                throw;
+                Console.WriteLine(
+                    $"DoctorProfile Id: {entry.Entity.Id}");
+
+                Console.WriteLine(
+                    $"DoctorProfile UserId: {entry.Entity.UserId}");
             }
+
+            await _context.SaveChangesAsync();
         }
     }
 }

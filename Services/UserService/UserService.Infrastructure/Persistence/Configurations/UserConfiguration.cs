@@ -27,8 +27,9 @@ namespace UserService.Infrastructure.Persistence.Configurations
                 .IsUnique();
             builder.Property(x => x.PasswordHash)
                 .IsRequired().HasMaxLength(255);
-           
-                
+            builder.Property(x => x.DateOfBirth)
+                .HasColumnType("date");
+
 
         }
     }

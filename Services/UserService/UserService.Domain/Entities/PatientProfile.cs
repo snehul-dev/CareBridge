@@ -13,7 +13,7 @@ namespace UserService.Domain.Entities
         public string? EmergencyContactName { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public string? MedicalHistory { get; set; }
-        public DateTime UpdatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
 
         public User User { get; set; } = null!;
 
