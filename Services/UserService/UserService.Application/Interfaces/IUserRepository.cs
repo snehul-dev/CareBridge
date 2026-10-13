@@ -9,6 +9,8 @@ namespace UserService.Application.Interfaces
     {
         Task<User?> GetByEmailAsync(string email);
         Task<User?> GetByIdAsync(Guid id);
+        Task AddDoctorProfileAsync(DoctorProfile doctorProfile);
+        Task AddPatientProfileAsync(PatientProfile patientProfile);
         Task AddAsync(User user);
         Task SaveChangesAsync();
     }

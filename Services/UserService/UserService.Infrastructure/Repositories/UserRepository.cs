@@ -22,6 +22,16 @@ namespace UserService.Infrastructure.Repositories
            await _context.Users.AddAsync(user);
         }
 
+        public async Task AddDoctorProfileAsync(DoctorProfile doctorProfile)
+        {
+            await _context.DoctorProfiles.AddAsync(doctorProfile);
+        }
+
+        public async Task AddPatientProfileAsync(PatientProfile patientProfile)
+        {
+            await _context.PatientProfiles.AddAsync(patientProfile);
+        }
+
         public async Task<User?> GetByEmailAsync(string email)
         {
             return await _context.Users
@@ -45,23 +55,26 @@ namespace UserService.Infrastructure.Repositories
                         .FirstOrDefaultAsync(u => u.Id == id);
         }
 
-
-public async Task SaveChangesAsync()
+        public async Task SaveChangesAsync()
         {
-            var entries = _context.ChangeTracker
-                .Entries<DoctorProfile>()
-                .ToList();
-
-            foreach (var entry in entries)
+            foreach (var entry in _context.ChangeTracker.Entries())
             {
                 Console.WriteLine(
-                    $"DoctorProfile State: {entry.State}");
+                    $"Entity: {entry.Metadata.ClrType.Name}, State: {entry.State}");
 
-                Console.WriteLine(
-                    $"DoctorProfile Id: {entry.Entity.Id}");
-
-                Console.WriteLine(
-                    $"DoctorProfile UserId: {entry.Entity.UserId}");
+                if (entry.State == EntityState.Modified)
+                {
+                    foreach (var property in entry.Properties)
+                    {
+                        if (property.IsModified)
+                        {
+                            Console.WriteLine(
+                                $"  Property: {property.Metadata.Name}, " +
+                                $"Original: {property.OriginalValue}, " +
+                                $"Current: {property.CurrentValue}");
+                        }
+                    }
+                }
             }
 
             await _context.SaveChangesAsync();

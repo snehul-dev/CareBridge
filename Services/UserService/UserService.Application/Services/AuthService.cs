@@ -13,7 +13,7 @@ public class AuthService : IAuthService
     private readonly IPasswordHasherService _passwordHasher;
     private readonly IMapper _mapper;
     private readonly IRoleRepository _roleRepository;
-    private readonly IJwtService _jwtservice;
+    private readonly IJwtService _jwtService;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
 
     public AuthService(
@@ -26,17 +26,20 @@ public class AuthService : IAuthService
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
-        _refreshTokenRepository = refreshTokenRepository;
         _mapper = mapper;
+        _jwtService = jwtService;
+        _refreshTokenRepository = refreshTokenRepository;
         _roleRepository = roleRepository;
-        _jwtservice = jwtService;
     }
 
-    // Patient Registration
+    // PATIENT REGISTRATION
 
     public async Task RegisterPatientAsync(RegisterPatientRequest request)
     {
-        var email = request.Email.Trim();
+        ArgumentNullException.ThrowIfNull(request);
+
+        var email = request.Email.Trim().ToLowerInvariant();
+        var phoneNumber = request.PhoneNumber.Trim();
         var now = DateTime.UtcNow;
 
         var patientRole = await _roleRepository.GetRoleByName("Patient")
@@ -67,12 +70,13 @@ public class AuthService : IAuthService
                     "This email cannot be reused for Patient registration.");
             }
 
-            if (!_passwordHasher.VerifyPassword(
-                    request.Password, existingUser.PasswordHash))
-            {
-                throw new BadRequestException(
-                    "The password does not match the existing account.");
-            }
+            ValidateMatchingPassword(
+                request.Password,
+                existingUser.PasswordHash);
+
+            ValidateMatchingPhoneNumber(
+                phoneNumber,
+                existingUser.PhoneNumber);
 
             if (existingUser.PatientProfile != null)
             {
@@ -80,13 +84,7 @@ public class AuthService : IAuthService
                     "A Patient profile already exists for this account.");
             }
 
-            existingUser.UserRoles.Add(new UserRole
-            {
-                UserId = existingUser.Id,
-                RoleId = patientRole.Id 
-            });
-
-            existingUser.PatientProfile = new PatientProfile
+            var patientProfile = new PatientProfile
             {
                 Id = Guid.NewGuid(),
                 UserId = existingUser.Id,
@@ -97,15 +95,27 @@ public class AuthService : IAuthService
                 UpdatedAt = null
             };
 
+            // Explicitly insert the new profile.
+            await _userRepository.AddPatientProfileAsync(patientProfile);
+
+            existingUser.UserRoles.Add(new UserRole
+            {
+                UserId = existingUser.Id,
+                RoleId = patientRole.Id
+            });
+
             existingUser.UpdatedAt = now;
 
             await _userRepository.SaveChangesAsync();
             return;
         }
 
+        // Create a new User when this email does not exist.
         var user = _mapper.Map<User>(request);
+
         user.Id = Guid.NewGuid();
         user.Email = email;
+        user.PhoneNumber = phoneNumber;
         user.PasswordHash = _passwordHasher.HashPassword(request.Password);
         user.IsActive = true;
         user.CreatedAt = now;
@@ -132,11 +142,14 @@ public class AuthService : IAuthService
         await _userRepository.SaveChangesAsync();
     }
 
-    // DOCTOR REGISTRATION 
+    // DOCTOR REGISTRATION
 
     public async Task RegisterDoctorAsync(RegisterDoctorRequest request)
     {
-        var email = request.Email.Trim();
+        ArgumentNullException.ThrowIfNull(request);
+
+        var email = request.Email.Trim().ToLowerInvariant();
+        var phoneNumber = request.PhoneNumber.Trim();
         var now = DateTime.UtcNow;
 
         var doctorRole = await _roleRepository.GetRoleByName("Doctor")
@@ -167,12 +180,13 @@ public class AuthService : IAuthService
                     "This email cannot be reused for Doctor registration.");
             }
 
-            if (!_passwordHasher.VerifyPassword(
-                    request.Password, existingUser.PasswordHash))
-            {
-                throw new BadRequestException(
-                    "The password does not match the existing account.");
-            }
+            ValidateMatchingPassword(
+                request.Password,
+                existingUser.PasswordHash);
+
+            ValidateMatchingPhoneNumber(
+                phoneNumber,
+                existingUser.PhoneNumber);
 
             if (existingUser.DoctorProfile != null)
             {
@@ -181,11 +195,15 @@ public class AuthService : IAuthService
             }
 
             var doctorProfile = _mapper.Map<DoctorProfile>(request);
+
             doctorProfile.Id = Guid.NewGuid();
             doctorProfile.UserId = existingUser.Id;
             doctorProfile.IsVerified = false;
             doctorProfile.CreatedAt = now;
             doctorProfile.UpdatedAt = now;
+
+            // Explicitly insert the new profile.
+            await _userRepository.AddDoctorProfileAsync(doctorProfile);
 
             existingUser.UserRoles.Add(new UserRole
             {
@@ -193,18 +211,18 @@ public class AuthService : IAuthService
                 RoleId = doctorRole.Id
             });
 
-            existingUser.DoctorProfile = doctorProfile;
             existingUser.UpdatedAt = now;
-
-
 
             await _userRepository.SaveChangesAsync();
             return;
         }
 
+        // No existing User: create a new Doctor account.
         var user = _mapper.Map<User>(request);
+
         user.Id = Guid.NewGuid();
         user.Email = email;
+        user.PhoneNumber = phoneNumber;
         user.PasswordHash = _passwordHasher.HashPassword(request.Password);
         user.IsActive = true;
         user.CreatedAt = now;
@@ -217,6 +235,7 @@ public class AuthService : IAuthService
         });
 
         var profile = _mapper.Map<DoctorProfile>(request);
+
         profile.Id = Guid.NewGuid();
         profile.UserId = user.Id;
         profile.IsVerified = false;
@@ -229,11 +248,15 @@ public class AuthService : IAuthService
         await _userRepository.SaveChangesAsync();
     }
 
-    // LAB REGISTRATION 
+    // LAB REGISTRATION
+    // Lab accounts require a unique email.
 
     public async Task RegisterLabAsync(RegisterLabRequest request)
     {
-        var email = request.Email.Trim();
+        ArgumentNullException.ThrowIfNull(request);
+
+        var email = request.Email.Trim().ToLowerInvariant();
+        var phoneNumber = request.PhoneNumber.Trim();
         var now = DateTime.UtcNow;
 
         var existingUser = await _userRepository.GetByEmailAsync(email);
@@ -252,7 +275,7 @@ public class AuthService : IAuthService
         {
             Id = Guid.NewGuid(),
             Email = email,
-            PhoneNumber = request.PhoneNumber.Trim(),
+            PhoneNumber = phoneNumber,
             PasswordHash = _passwordHasher.HashPassword(request.Password),
             IsActive = true,
             CreatedAt = now,
@@ -266,6 +289,7 @@ public class AuthService : IAuthService
         });
 
         var labProfile = _mapper.Map<LabProfile>(request);
+
         labProfile.Id = Guid.NewGuid();
         labProfile.UserId = user.Id;
         labProfile.IsVerified = false;
@@ -278,7 +302,7 @@ public class AuthService : IAuthService
         await _userRepository.SaveChangesAsync();
     }
 
-    //HELPERS 
+    // SHARED HELPERS
 
     private static HashSet<string> GetRoleNames(User user)
     {
@@ -288,24 +312,53 @@ public class AuthService : IAuthService
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
 
+    private void ValidateMatchingPassword(
+        string requestPassword,
+        string existingPasswordHash)
+    {
+        if (!_passwordHasher.VerifyPassword(
+                requestPassword,
+                existingPasswordHash))
+        {
+            throw new BadRequestException(
+                "The password does not match the existing account.");
+        }
+    }
+
+    private static void ValidateMatchingPhoneNumber(
+        string requestPhoneNumber,
+        string existingPhoneNumber)
+    {
+        if (!string.Equals(
+                requestPhoneNumber,
+                existingPhoneNumber.Trim(),
+                StringComparison.Ordinal))
+        {
+            throw new BadRequestException(
+                "The phone number does not match the existing account.");
+        }
+    }
+
+    // LOGIN
+
     public async Task<LoginResponse> LoginAsync(LoginRequest request)
     {
-
-        if (request is null)
-            throw new BadRequestException("Login request is required.");
+        ArgumentNullException.ThrowIfNull(request);
 
         if (string.IsNullOrWhiteSpace(request.Email) ||
             string.IsNullOrWhiteSpace(request.Password))
         {
-            throw new BadRequestException("Email and password are required.");
+            throw new BadRequestException(
+                "Email and password are required.");
         }
+
         var allowedRoles = new[]
-           {
-                "Patient",
-                "Doctor",
-                "Lab",
-                "Admin"
-            };
+        {
+            "Patient",
+            "Doctor",
+            "Lab",
+            "Admin"
+        };
 
         var role = allowedRoles.FirstOrDefault(r =>
             r.Equals(
@@ -318,36 +371,25 @@ public class AuthService : IAuthService
                 "Please select a valid role.");
         }
 
-        //  Find the user
-        var email = request.Email.Trim();
+        var email = request.Email.Trim().ToLowerInvariant();
 
         var user = await _userRepository.GetByEmailAsync(email);
 
-        if (user is null)
+        if (user is null ||
+            !_passwordHasher.VerifyPassword(
+                request.Password,
+                user.PasswordHash))
         {
             throw new BadRequestException(
                 "Invalid email or password.");
         }
 
-        //  Verify BCrypt password
-        var passwordValid = _passwordHasher.VerifyPassword(
-            request.Password,
-            user.PasswordHash);
-
-        if (!passwordValid)
-        {
-            throw new BadRequestException(
-                "Invalid email or password.");
-        }
-
-        //  Check account status
         if (!user.IsActive)
         {
             throw new BadRequestException(
                 "Your account is inactive.");
         }
 
-        //  Verify that the selected role belongs to the user
         var hasSelectedRole = user.UserRoles.Any(ur =>
             ur.Role != null &&
             ur.Role.Name.Equals(
@@ -360,41 +402,33 @@ public class AuthService : IAuthService
                 "The selected role is not assigned to your account.");
         }
 
-        //  Verify Doctor approval only when logging in as Doctor
-        if (role == "Doctor")
+        // A Doctor must be approved before Doctor login.
+        if (role == "Doctor" &&
+            (user.DoctorProfile is null ||
+             !user.DoctorProfile.IsVerified))
         {
-            if (user.DoctorProfile is null ||
-                !user.DoctorProfile.IsVerified)
-            {
-                throw new BadRequestException(
-                    "Your doctor account is awaiting verification.");
-            }
+            throw new BadRequestException(
+                "Your doctor account is awaiting verification.");
         }
 
-        //  Verify Lab approval only when logging in as Lab
-        if (role == "Lab")
+        // A Lab must be approved before Lab login.
+        if (role == "Lab" &&
+            (user.LabProfile is null ||
+             !user.LabProfile.IsVerified))
         {
-            if (user.LabProfile is null ||
-                !user.LabProfile.IsVerified)
-            {
-                throw new BadRequestException(
-                    "Your lab account is awaiting verification.");
-            }
+            throw new BadRequestException(
+                "Your lab account is awaiting verification.");
         }
 
-        //  Generate JWT for the selected role
-        var (accessToken, expiresAt) = _jwtservice.GenerateAccessToken(
+        var (accessToken, expiresAt) =
+            _jwtService.GenerateAccessToken(
                 user.Id,
                 user.Email,
                 role);
 
-        // generate refresh token
-
         var rawRefreshToken = RefreshTokenHelper.Generate();
-
         var now = DateTime.UtcNow;
 
-        //  Store only the refresh-token hash
         var refreshToken = new RefreshToken
         {
             Id = Guid.NewGuid(),
@@ -408,8 +442,6 @@ public class AuthService : IAuthService
 
         await _refreshTokenRepository.AddAsync(refreshToken);
         await _refreshTokenRepository.SaveChangesAsync();
-
-        //return token to client
 
         return new LoginResponse
         {

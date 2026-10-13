@@ -23,8 +23,7 @@ namespace UserService.Infrastructure.Persistence.Configurations
                 .IsUnique();
             builder.Property(x => x.PhoneNumber)
                 .IsRequired().HasMaxLength(20);
-            builder.HasIndex(x => x.PhoneNumber)
-                .IsUnique();
+          
             builder.Property(x => x.PasswordHash)
                 .IsRequired().HasMaxLength(255);
             builder.Property(x => x.DateOfBirth)
