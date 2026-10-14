@@ -57,26 +57,6 @@ namespace UserService.Infrastructure.Repositories
 
         public async Task SaveChangesAsync()
         {
-            foreach (var entry in _context.ChangeTracker.Entries())
-            {
-                Console.WriteLine(
-                    $"Entity: {entry.Metadata.ClrType.Name}, State: {entry.State}");
-
-                if (entry.State == EntityState.Modified)
-                {
-                    foreach (var property in entry.Properties)
-                    {
-                        if (property.IsModified)
-                        {
-                            Console.WriteLine(
-                                $"  Property: {property.Metadata.Name}, " +
-                                $"Original: {property.OriginalValue}, " +
-                                $"Current: {property.CurrentValue}");
-                        }
-                    }
-                }
-            }
-
             await _context.SaveChangesAsync();
         }
     }
