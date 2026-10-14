@@ -36,6 +36,7 @@ namespace UserService.Infrastructure
             service.AddScoped<IAuthService, AuthService>();
             service.AddScoped<IJwtService, JwtService>();
             service.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+            service.AddScoped<IUserProfileService, UserProfileService>();
 
             return service;
         }

@@ -95,7 +95,7 @@ public class AuthService : IAuthService
                 UpdatedAt = null
             };
 
-            // Explicitly insert the new profile.
+        
             await _userRepository.AddPatientProfileAsync(patientProfile);
 
             existingUser.UserRoles.Add(new UserRole
@@ -202,7 +202,7 @@ public class AuthService : IAuthService
             doctorProfile.CreatedAt = now;
             doctorProfile.UpdatedAt = now;
 
-            // Explicitly insert the new profile.
+         
             await _userRepository.AddDoctorProfileAsync(doctorProfile);
 
             existingUser.UserRoles.Add(new UserRole
@@ -217,7 +217,7 @@ public class AuthService : IAuthService
             return;
         }
 
-        // No existing User: create a new Doctor account.
+        // No existing User create a new Doctor account.
         var user = _mapper.Map<User>(request);
 
         user.Id = Guid.NewGuid();
@@ -249,7 +249,6 @@ public class AuthService : IAuthService
     }
 
     // LAB REGISTRATION
-    // Lab accounts require a unique email.
 
     public async Task RegisterLabAsync(RegisterLabRequest request)
     {
@@ -301,8 +300,6 @@ public class AuthService : IAuthService
         await _userRepository.AddAsync(user);
         await _userRepository.SaveChangesAsync();
     }
-
-    // SHARED HELPERS
 
     private static HashSet<string> GetRoleNames(User user)
     {
@@ -371,7 +368,7 @@ public class AuthService : IAuthService
                 "Please select a valid role.");
         }
 
-        var email = request.Email.Trim().ToLowerInvariant();
+        var email = request.Email.Trim();
 
         var user = await _userRepository.GetByEmailAsync(email);
 
@@ -420,11 +417,10 @@ public class AuthService : IAuthService
                 "Your lab account is awaiting verification.");
         }
 
-        var (accessToken, expiresAt) =
-            _jwtService.GenerateAccessToken(
-                user.Id,
-                user.Email,
-                role);
+        var (accessToken, expiresAt) = _jwtService.GenerateAccessToken(
+                            user.Id,
+                           user.Email,
+                           role);
 
         var rawRefreshToken = RefreshTokenHelper.Generate();
         var now = DateTime.UtcNow;

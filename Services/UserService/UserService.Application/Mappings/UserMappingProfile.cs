@@ -1,6 +1,7 @@
 ﻿
 using AutoMapper;
 using UserService.Application.DTOs.Auth;
+using UserService.Application.DTOs.Users;
 using UserService.Domain.Entities;
 using UserService.Domain.Enums;
 
@@ -67,6 +68,10 @@ namespace UserService.Application.Mappings
                 .ForMember(dest => dest.IsVerified, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore());
+
+            // User to MyProfileResponse
+
+            CreateMap<User, MyProfileResponse>();
         }
     }
 }

@@ -1,6 +1,8 @@
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
+using System.Security.Claims;
 using System.Text;
 using UserService.Api.Middleware;
 using UserService.Application;
@@ -16,11 +18,29 @@ builder.Services.AddApplication();
 // Controllers
 builder.Services.AddControllers();
 
-// Swagger / OpenAPI
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter your JWT access token."
+    });
 
+    options.AddSecurityRequirement(document =>
+        new OpenApiSecurityRequirement
+        {
+            [new OpenApiSecuritySchemeReference("Bearer", document)] =
+                new List<string>()
+        });
+});
+
+// JWT Authentication
 builder.Services
     .AddAuthentication(options =>
     {
@@ -59,29 +79,33 @@ builder.Services
 
             ValidateLifetime = true,
 
-            RoleClaimType = System.Security.Claims.ClaimTypes.Role,
+            RoleClaimType = ClaimTypes.Role,
 
             ClockSkew = TimeSpan.FromSeconds(30)
         };
     });
 
-builder.Services.AddAuthorization();
 
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// Seed Admin user and Admin role
+
 await AdminSeeder.SeedAsync(app.Services);
 
+// Global exception middleware
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
+// Swagger UI
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+
 app.UseHttpsRedirection();
+
 app.UseAuthentication();
 app.UseAuthorization();
 

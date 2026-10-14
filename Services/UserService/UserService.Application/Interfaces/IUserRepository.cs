@@ -12,6 +12,7 @@ namespace UserService.Application.Interfaces
         Task AddDoctorProfileAsync(DoctorProfile doctorProfile);
         Task AddPatientProfileAsync(PatientProfile patientProfile);
         Task AddAsync(User user);
+        Task<User?> GetMyProfileAsync(Guid userId);
         Task SaveChangesAsync();
     }
 }
