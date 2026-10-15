@@ -449,4 +449,105 @@ public class AuthService : IAuthService
             RefreshToken = rawRefreshToken
         };
     }
+
+
+    public async Task<LoginResponse> RefreshAsync(
+        RefreshTokenRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (string.IsNullOrWhiteSpace(request.RefreshToken))
+        {
+            throw new BadRequestException(
+                "Refresh token is required.");
+        }
+
+        var tokenHash = RefreshTokenHelper.Hash(request.RefreshToken);
+
+        var storedToken = await _refreshTokenRepository.GetByHashAsync(tokenHash);
+
+        if (storedToken is null ||
+            storedToken.RevokedAt.HasValue ||
+            storedToken.ExpiresAt <= DateTime.UtcNow)
+        {
+            throw new UnauthorizedException("Invalid, expired, or revoked refresh token.");
+        }
+
+        var user = await _userRepository.GetByIdAsync(storedToken.UserId);
+
+        if (user is null || !user.IsActive)
+        {
+            throw new UnauthorizedException("User is inactive or does not exist.");
+        }
+
+      
+        var role = storedToken.Role;
+
+        var hasRole = user.UserRoles.Any(ur =>
+            ur.Role != null &&
+            ur.Role.Name.Equals(role,StringComparison.OrdinalIgnoreCase));
+
+        if (!hasRole)
+        {
+            throw new UnauthorizedException(
+                "This role is no longer assigned to the user.");
+        }
+
+ 
+        if (role.Equals("Doctor",
+                StringComparison.OrdinalIgnoreCase) &&
+            (user.DoctorProfile is null ||
+             !user.DoctorProfile.IsVerified))
+        {
+            throw new UnauthorizedException(
+                "Doctor account is not verified.");
+        }
+
+        if (role.Equals("Lab",
+                StringComparison.OrdinalIgnoreCase) &&
+            (user.LabProfile is null ||
+             !user.LabProfile.IsVerified))
+        {
+            throw new UnauthorizedException(
+                "Lab account is not verified.");
+        }
+
+        var now = DateTime.UtcNow;
+
+        var (accessToken, accessTokenExpiresAt) =
+            _jwtService.GenerateAccessToken(
+                user.Id,
+                user.Email,
+                role);
+
+        var newRawRefreshToken = RefreshTokenHelper.Generate();
+
+        storedToken.RevokedAt = now;
+
+        var newRefreshToken = new RefreshToken
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            TokenHash = RefreshTokenHelper.Hash(
+                newRawRefreshToken),
+            Role = role,
+            CreatedAt = now,
+            ExpiresAt = now.AddDays(7),
+            RevokedAt = null
+        };
+
+        await _refreshTokenRepository.AddAsync(newRefreshToken);
+        await _refreshTokenRepository.SaveChangesAsync();
+
+        return new LoginResponse
+        {
+            UserId = user.Id,
+            Email = user.Email,
+            Role = role,
+            AccessToken = accessToken,
+            AccessTokenExpiresAt = accessTokenExpiresAt,
+            RefreshToken = newRawRefreshToken
+        };
+    }
+
 }

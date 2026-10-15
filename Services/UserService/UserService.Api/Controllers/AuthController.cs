@@ -110,5 +110,14 @@ namespace UserService.Api.Controllers
             return Ok(response);
         }
 
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
+        {
+            var response = await _authService.RefreshAsync(request);
+
+            return Ok(response);
+        }
+
+
     }
 }
