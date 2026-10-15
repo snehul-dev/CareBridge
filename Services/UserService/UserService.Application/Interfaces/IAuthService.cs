@@ -13,6 +13,7 @@ namespace UserService.Application.Interfaces
         Task RegisterLabAsync(RegisterLabRequest request);
 
         Task<LoginResponse> RefreshAsync(RefreshTokenRequest request);
+        Task LogoutAsync(RefreshTokenRequest request);
 
         Task<LoginResponse> LoginAsync(LoginRequest request);
     }

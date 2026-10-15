@@ -550,4 +550,25 @@ public class AuthService : IAuthService
         };
     }
 
+    public async Task LogoutAsync(RefreshTokenRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (string.IsNullOrWhiteSpace(request.RefreshToken))
+        {
+            throw new BadRequestException("Refresh token is required");
+        }
+
+        var tokenHash = RefreshTokenHelper.Hash(request.RefreshToken);
+        var storedToken = await _refreshTokenRepository.GetByHashAsync(tokenHash);
+
+        if(storedToken == null || storedToken.RevokedAt != null)
+        {
+            return;
+
+        }
+
+        storedToken.RevokedAt = DateTime.UtcNow;
+        await _refreshTokenRepository.SaveChangesAsync();
+    }
 }

@@ -118,6 +118,16 @@ namespace UserService.Api.Controllers
             return Ok(response);
         }
 
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request)
+        {
+            await _authService.LogoutAsync(request);
+            return Ok(new
+            {
+                message = "Log out successfully."
+            });
+        }
+
 
     }
 }
