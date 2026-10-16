@@ -7,12 +7,12 @@ namespace UserService.Application.Interfaces
 {
     public interface IUserRepository
     {
-        Task<User?> GetByEmailAsync(string email);
-        Task<User?> GetByIdAsync(Guid id);
-        Task AddDoctorProfileAsync(DoctorProfile doctorProfile);
-        Task AddPatientProfileAsync(PatientProfile patientProfile);
-        Task AddAsync(User user);
-        Task<User?> GetMyProfileAsync(Guid userId);
-        Task SaveChangesAsync();
+        Task<User?> GetByEmailAsync(string email , CancellationToken cancellationToken);
+        Task<User?> GetByIdAsync(Guid id , CancellationToken cancellationToken);
+        Task AddDoctorProfileAsync(DoctorProfile doctorProfile , CancellationToken cancellationToken);
+        Task AddPatientProfileAsync(PatientProfile patientProfile , CancellationToken cancellationToken);
+        Task AddAsync(User user, CancellationToken cancellationToken);
+        Task<User?> GetMyProfileAsync(Guid userId , CancellationToken cancellationToken);
+        Task SaveChangesAsync(CancellationToken cancellationToken);
     }
 }

@@ -8,9 +8,9 @@ namespace UserService.Application.Interfaces
 {
     public interface IUserProfileService
     {
-        Task<MyProfileResponse> GetMyProfileAsync(Guid userId);
+        Task<MyProfileResponse> GetMyProfileAsync(Guid userId , CancellationToken cancellationToken);
 
-        Task UpdateMyProfileAsync(Guid UserId, UpdateMyProfileRequest request);
+        Task UpdateMyProfileAsync(Guid UserId, UpdateMyProfileRequest request , CancellationToken cancellationToken);
 
     }
 }

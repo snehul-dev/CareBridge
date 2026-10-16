@@ -1,133 +1,163 @@
 ﻿
+using CareBridge.Shared.Responses;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 using UserService.Application.DTOs.Auth;
 using UserService.Application.Interfaces;
 using UserService.Application.Validators;
 
-namespace UserService.Api.Controllers
+namespace UserService.Api.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class AuthController : ControllerBase
 {
+    private readonly RegisterPatientValidator _patientValidator;
+    private readonly RegisterDoctorValidator _doctorValidator;
+    private readonly RegisterLabValidator _labValidator;
+    private readonly IAuthService _authService;
 
-    [ApiController]
-    [Route("api/[controller]")]
-    public class AuthController : ControllerBase
+    public AuthController(
+        RegisterPatientValidator patientValidator,
+        RegisterDoctorValidator doctorValidator,
+        RegisterLabValidator labValidator,
+        IAuthService authService)
     {
+        _patientValidator = patientValidator;
+        _doctorValidator = doctorValidator;
+        _labValidator = labValidator;
+        _authService = authService;
+    }
 
-        private readonly RegisterPatientValidator _patientvalidator;
-        private readonly RegisterDoctorValidator _doctorvalidator;
-        private readonly IAuthService _authService;
-        private readonly RegisterLabValidator _labvalidator;
+    [HttpPost("Register/Patient")]
+    public async Task<IActionResult> RegisterPatient(RegisterPatientRequest request , 
+        CancellationToken cancellationToken)
+    {
+        var validationResult = await _patientValidator.ValidateAsync(request , cancellationToken);
 
-        public AuthController(RegisterPatientValidator patientvalidator,
-            RegisterDoctorValidator doctorvalidator,
-            RegisterLabValidator labvalidator,
-            IAuthService authService
-            )
+        if (!validationResult.IsValid)
         {
-            _patientvalidator = patientvalidator;
-            _doctorvalidator = doctorvalidator;
-            _labvalidator = labvalidator;
-            _authService = authService;
+            var errors = validationResult.Errors
+                .Select(error =>
+                    $"{error.PropertyName}: {error.ErrorMessage}")
+                .ToList();
 
-        }
-        [HttpPost("Register/Patient")]
-        public async Task<IActionResult> RegisterPatient(RegisterPatientRequest request)
-        {
-            var validationResult = await _patientvalidator.ValidateAsync(request);
+            var failure = ApiResponse<object>.Fail(
+                errors,
+                "Validation failed",
+                HttpStatusCode.BadRequest);
 
-            if (!validationResult.IsValid)
-            {
-                return BadRequest(validationResult.Errors.Select(
-                      error => new
-                      {
-                          Field = error.PropertyName,
-                          Message = error.ErrorMessage
-                      }
-                    ));
-            }
-
-            await _authService.RegisterPatientAsync(request);
-            return Created("", new
-            {
-                message = "Patient registered successfully."
-
-            });
-
-
+            return StatusCode(failure.StatusCode, failure);
         }
 
-        [HttpPost("Register/Doctor")]
-        public async Task<IActionResult> RegisterDoctor(RegisterDoctorRequest request)
+        await _authService.RegisterPatientAsync(request, cancellationToken);
+
+        var response = ApiResponse<object>.Success(
+            null,
+            "Patient registered successfully.",
+            HttpStatusCode.Created);
+
+        return StatusCode(response.StatusCode, response);
+    }
+
+    [HttpPost("Register/Doctor")]
+    public async Task<IActionResult> RegisterDoctor(
+        RegisterDoctorRequest request , CancellationToken cancellationToken)
+    {
+        var validationResult = await _doctorValidator.ValidateAsync(request , cancellationToken);
+
+        if (!validationResult.IsValid)
         {
-            var validationResult = await _doctorvalidator.ValidateAsync(request);
+            var errors = validationResult.Errors
+                .Select(error =>
+                    $"{error.PropertyName}: {error.ErrorMessage}")
+                .ToList();
 
-            if (!validationResult.IsValid)
-            {
-                return BadRequest(validationResult.Errors.Select(
-                      error => new
-                      {
-                          Field = error.PropertyName,
-                          Message = error.ErrorMessage
-                      }
-                    ));
-            }
+            var failure = ApiResponse<object>.Fail(
+                errors,
+                "Validation failed",
+                HttpStatusCode.BadRequest);
 
-            await _authService.RegisterDoctorAsync(request);
-            return Created("", new
-            {
-                message = "Doctor registration submitted successfully. Awaiting admin verification."
-            });
+            return StatusCode(failure.StatusCode, failure);
         }
 
-        [HttpPost("Register/Lab")]
-        public async Task<IActionResult> RegisterLabAsync(RegisterLabRequest request)
+        await _authService.RegisterDoctorAsync(request , cancellationToken);
+
+        var response = ApiResponse<object>.Success(
+            null,
+            "Doctor registration submitted successfully. Awaiting admin verification.",
+            HttpStatusCode.Created);
+
+        return StatusCode(response.StatusCode, response);
+    }
+
+    [HttpPost("Register/Lab")]
+    public async Task<IActionResult> RegisterLabAsync(
+        RegisterLabRequest request , CancellationToken cancellationToken)
+    {
+        var validationResult =
+            await _labValidator.ValidateAsync(request ,cancellationToken);
+
+        if (!validationResult.IsValid)
         {
-            var validationResult = await _labvalidator.ValidateAsync(request);
+            var errors = validationResult.Errors
+                .Select(error =>
+                    $"{error.PropertyName}: {error.ErrorMessage}")
+                .ToList();
 
-            if (!validationResult.IsValid)
-            {
-                return BadRequest(validationResult.Errors.Select(
-                      error => new
-                      {
-                          Field = error.PropertyName,
-                          Message = error.ErrorMessage
-                      }
-                    ));
-            }
+            var failure = ApiResponse<object>.Fail(
+                errors,
+                "Validation failed",
+                HttpStatusCode.BadRequest);
 
-            await _authService.RegisterLabAsync(request);
-
-            return Created("", new
-            {
-                message = "Lab registration submitted successfully. Awaiting admin verification."
-
-            });
-
-        }
-        [HttpPost("Login")]
-        public async Task<IActionResult> LoginAsync(LoginRequest request)
-        {
-           var response = await _authService.LoginAsync(request);
-            return Ok(response);
-        }
-
-        [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
-        {
-            var response = await _authService.RefreshAsync(request);
-
-            return Ok(response);
+            return StatusCode(failure.StatusCode, failure);
         }
 
-        [HttpPost("logout")]
-        public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request)
-        {
-            await _authService.LogoutAsync(request);
-            return Ok(new
-            {
-                message = "Log out successfully."
-            });
-        }
+        await _authService.RegisterLabAsync(request,cancellationToken);
 
+        var response = ApiResponse<object>.Success(
+            null,
+            "Lab registration submitted successfully. Awaiting admin verification.",
+            HttpStatusCode.Created);
 
+        return StatusCode(response.StatusCode, response);
+    }
+
+    [HttpPost("Login")]
+    public async Task<IActionResult> LoginAsync(LoginRequest request , CancellationToken cancellationToken)
+    {
+        var result = await _authService.LoginAsync(request,cancellationToken);
+
+        var response = ApiResponse<object>.Success(
+            result,
+            "Login successful");
+
+        return StatusCode(response.StatusCode, response);
+    }
+
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh(
+        [FromBody] RefreshTokenRequest request , CancellationToken cancellationToken)
+    {
+        var result = await _authService.RefreshAsync(request , cancellationToken);
+
+        var response = ApiResponse<object>.Success(
+            result,
+            "Token refreshed successfully");
+
+        return StatusCode(response.StatusCode, response);
+    }
+
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout(
+        [FromBody] RefreshTokenRequest request , CancellationToken cancellationToken)
+    {
+        await _authService.LogoutAsync(request , cancellationToken);
+
+        var response = ApiResponse<object>.Success(
+            null,
+            "Logged out successfully");
+
+        return StatusCode(response.StatusCode, response);
     }
 }

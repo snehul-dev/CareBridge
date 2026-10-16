@@ -1,7 +1,7 @@
 ﻿
 using AutoMapper;
 using UserService.Application.DTOs.Auth;
-using UserService.Application.Exceptions;
+using CareBridge.Shared.Exceptions;
 using UserService.Application.Interfaces;
 using UserService.Domain.Entities;
 
@@ -34,7 +34,8 @@ public class AuthService : IAuthService
 
     // PATIENT REGISTRATION
 
-    public async Task RegisterPatientAsync(RegisterPatientRequest request)
+    public async Task RegisterPatientAsync(RegisterPatientRequest request , 
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -42,11 +43,11 @@ public class AuthService : IAuthService
         var phoneNumber = request.PhoneNumber.Trim();
         var now = DateTime.UtcNow;
 
-        var patientRole = await _roleRepository.GetRoleByName("Patient")
+        var patientRole = await _roleRepository.GetRoleByName("Patient" , cancellationToken)
             ?? throw new NotFoundException(
                 "Patient role is not configured in the database.");
 
-        var existingUser = await _userRepository.GetByEmailAsync(email);
+        var existingUser = await _userRepository.GetByEmailAsync(email , cancellationToken);
 
         if (existingUser != null)
         {
@@ -96,7 +97,7 @@ public class AuthService : IAuthService
             };
 
         
-            await _userRepository.AddPatientProfileAsync(patientProfile);
+            await _userRepository.AddPatientProfileAsync(patientProfile , cancellationToken);
 
             existingUser.UserRoles.Add(new UserRole
             {
@@ -106,7 +107,7 @@ public class AuthService : IAuthService
 
             existingUser.UpdatedAt = now;
 
-            await _userRepository.SaveChangesAsync();
+            await _userRepository.SaveChangesAsync(cancellationToken);
             return;
         }
 
@@ -138,13 +139,14 @@ public class AuthService : IAuthService
             UpdatedAt = null
         };
 
-        await _userRepository.AddAsync(user);
-        await _userRepository.SaveChangesAsync();
+        await _userRepository.AddAsync(user , cancellationToken);
+        await _userRepository.SaveChangesAsync(cancellationToken);
     }
 
     // DOCTOR REGISTRATION
 
-    public async Task RegisterDoctorAsync(RegisterDoctorRequest request)
+    public async Task RegisterDoctorAsync(RegisterDoctorRequest request , 
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -152,11 +154,11 @@ public class AuthService : IAuthService
         var phoneNumber = request.PhoneNumber.Trim();
         var now = DateTime.UtcNow;
 
-        var doctorRole = await _roleRepository.GetRoleByName("Doctor")
+        var doctorRole = await _roleRepository.GetRoleByName("Doctor" , cancellationToken)
             ?? throw new NotFoundException(
                 "Doctor role is not configured in the database.");
 
-        var existingUser = await _userRepository.GetByEmailAsync(email);
+        var existingUser = await _userRepository.GetByEmailAsync(email , cancellationToken);
 
         if (existingUser != null)
         {
@@ -203,7 +205,7 @@ public class AuthService : IAuthService
             doctorProfile.UpdatedAt = now;
 
          
-            await _userRepository.AddDoctorProfileAsync(doctorProfile);
+            await _userRepository.AddDoctorProfileAsync(doctorProfile , cancellationToken);
 
             existingUser.UserRoles.Add(new UserRole
             {
@@ -213,7 +215,7 @@ public class AuthService : IAuthService
 
             existingUser.UpdatedAt = now;
 
-            await _userRepository.SaveChangesAsync();
+            await _userRepository.SaveChangesAsync(cancellationToken);
             return;
         }
 
@@ -244,13 +246,13 @@ public class AuthService : IAuthService
 
         user.DoctorProfile = profile;
 
-        await _userRepository.AddAsync(user);
-        await _userRepository.SaveChangesAsync();
+        await _userRepository.AddAsync(user , cancellationToken);
+        await _userRepository.SaveChangesAsync(cancellationToken);
     }
 
     // LAB REGISTRATION
 
-    public async Task RegisterLabAsync(RegisterLabRequest request)
+    public async Task RegisterLabAsync(RegisterLabRequest request , CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -258,7 +260,7 @@ public class AuthService : IAuthService
         var phoneNumber = request.PhoneNumber.Trim();
         var now = DateTime.UtcNow;
 
-        var existingUser = await _userRepository.GetByEmailAsync(email);
+        var existingUser = await _userRepository.GetByEmailAsync(email , cancellationToken);
 
         if (existingUser != null)
         {
@@ -266,7 +268,7 @@ public class AuthService : IAuthService
                 "This email is already in use. Lab registration requires a unique email.");
         }
 
-        var labRole = await _roleRepository.GetRoleByName("Lab")
+        var labRole = await _roleRepository.GetRoleByName("Lab" , cancellationToken)
             ?? throw new NotFoundException(
                 "Lab role is not configured in the database.");
 
@@ -297,8 +299,8 @@ public class AuthService : IAuthService
 
         user.LabProfile = labProfile;
 
-        await _userRepository.AddAsync(user);
-        await _userRepository.SaveChangesAsync();
+        await _userRepository.AddAsync(user , cancellationToken);
+        await _userRepository.SaveChangesAsync(cancellationToken);
     }
 
     private static HashSet<string> GetRoleNames(User user)
@@ -338,7 +340,7 @@ public class AuthService : IAuthService
 
     // LOGIN
 
-    public async Task<LoginResponse> LoginAsync(LoginRequest request)
+    public async Task<LoginResponse> LoginAsync(LoginRequest request , CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -370,7 +372,7 @@ public class AuthService : IAuthService
 
         var email = request.Email.Trim();
 
-        var user = await _userRepository.GetByEmailAsync(email);
+        var user = await _userRepository.GetByEmailAsync(email , cancellationToken);
 
         if (user is null ||
             !_passwordHasher.VerifyPassword(
@@ -436,8 +438,8 @@ public class AuthService : IAuthService
             RevokedAt = null
         };
 
-        await _refreshTokenRepository.AddAsync(refreshToken);
-        await _refreshTokenRepository.SaveChangesAsync();
+        await _refreshTokenRepository.AddAsync(refreshToken , cancellationToken);
+        await _refreshTokenRepository.SaveChangesAsync(cancellationToken);
 
         return new LoginResponse
         {
@@ -452,7 +454,7 @@ public class AuthService : IAuthService
 
 
     public async Task<LoginResponse> RefreshAsync(
-        RefreshTokenRequest request)
+        RefreshTokenRequest request , CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -464,7 +466,7 @@ public class AuthService : IAuthService
 
         var tokenHash = RefreshTokenHelper.Hash(request.RefreshToken);
 
-        var storedToken = await _refreshTokenRepository.GetByHashAsync(tokenHash);
+        var storedToken = await _refreshTokenRepository.GetByHashAsync(tokenHash , cancellationToken);
 
         if (storedToken is null ||
             storedToken.RevokedAt.HasValue ||
@@ -473,7 +475,7 @@ public class AuthService : IAuthService
             throw new UnauthorizedException("Invalid, expired, or revoked refresh token.");
         }
 
-        var user = await _userRepository.GetByIdAsync(storedToken.UserId);
+        var user = await _userRepository.GetByIdAsync(storedToken.UserId , cancellationToken);
 
         if (user is null || !user.IsActive)
         {
@@ -536,8 +538,8 @@ public class AuthService : IAuthService
             RevokedAt = null
         };
 
-        await _refreshTokenRepository.AddAsync(newRefreshToken);
-        await _refreshTokenRepository.SaveChangesAsync();
+        await _refreshTokenRepository.AddAsync(newRefreshToken , cancellationToken);
+        await _refreshTokenRepository.SaveChangesAsync(cancellationToken);
 
         return new LoginResponse
         {
@@ -550,7 +552,7 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task LogoutAsync(RefreshTokenRequest request)
+    public async Task LogoutAsync(RefreshTokenRequest request , CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -560,7 +562,7 @@ public class AuthService : IAuthService
         }
 
         var tokenHash = RefreshTokenHelper.Hash(request.RefreshToken);
-        var storedToken = await _refreshTokenRepository.GetByHashAsync(tokenHash);
+        var storedToken = await _refreshTokenRepository.GetByHashAsync(tokenHash , cancellationToken);
 
         if(storedToken == null || storedToken.RevokedAt != null)
         {
@@ -569,6 +571,6 @@ public class AuthService : IAuthService
         }
 
         storedToken.RevokedAt = DateTime.UtcNow;
-        await _refreshTokenRepository.SaveChangesAsync();
+        await _refreshTokenRepository.SaveChangesAsync(cancellationToken);
     }
 }

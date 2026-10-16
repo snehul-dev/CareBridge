@@ -20,6 +20,7 @@ namespace UserService.Application.DTOs.Auth
         public int ExperienceYears { get; set; }
         public decimal ConsultationFee { get; set; }
         public string? HospitalOrClinicName { get; set; }
+        public string Address { get; set; } = string.Empty;
         public string City { get; set; } = string.Empty;
         public string District { get; set; } = string.Empty;
         public string? Bio { get; set; }

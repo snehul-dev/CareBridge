@@ -14,6 +14,7 @@ namespace UserService.Domain.Entities
         public int ExperienceYears { get; set; }
         public decimal ConsultationFee { get; set; }
         public string? HospitalOrClinicName { get; set; }
+        public string Address { get; set; } = string.Empty;
         public string? City { get; set; }
         public string? District { get; set; }
         public string? Bio { get; set; } 

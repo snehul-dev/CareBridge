@@ -31,6 +31,8 @@ namespace UserService.Application.Validators
                 .NotEmpty()
                 .WithMessage("Email address is required.")
                 .EmailAddress()
+                .WithMessage("Please enter a valid email address.")
+                .Matches(@"^[a-zA-Z0-9]+([._%+-][a-zA-Z0-9]+)*@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+$")
                 .WithMessage("Please enter a valid email address.");
 
             RuleFor(x => x.Password)
@@ -80,6 +82,10 @@ namespace UserService.Application.Validators
             RuleFor(x => x.HospitalOrClinicName)
                 .MaximumLength(200)
                 .WithMessage("Hospital or clinic name cannot exceed 200 characters.");
+
+            RuleFor(x => x.Address)
+                .MaximumLength(250)
+                .WithMessage("Address cannot exceed 250 characters.");
 
             RuleFor(x => x.City)
                 .NotEmpty()

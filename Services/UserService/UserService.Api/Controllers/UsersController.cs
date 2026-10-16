@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿
+using CareBridge.Shared.Responses;
+using System.Net;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UserService.Application.DTOs.Users;
 using UserService.Application.Interfaces;
@@ -20,21 +23,28 @@ namespace UserService.Api.Controllers
 
 
         [HttpGet("me")]
-        public async Task<IActionResult> GetMyProfileAsync()
+        public async Task<IActionResult> GetMyProfileAsync(CancellationToken cancellationToken)
         {
             var userId = GetUserId();
 
-            var profile = await _userProfileService.GetMyProfileAsync(userId);
-            return Ok(profile);
+            var profile = await _userProfileService.GetMyProfileAsync(userId, cancellationToken);
+            var response = ApiResponse<object>.Success(profile, "Profile retrieved successfully.");
+
+            return StatusCode(response.StatusCode, response);
         }
 
         [HttpPut("me")]
-        public async Task<IActionResult> UpdateMyProfileAsync([FromBody] UpdateMyProfileRequest request)
+        public async Task<IActionResult> UpdateMyProfileAsync([FromBody] UpdateMyProfileRequest request ,
+            CancellationToken cancellationToken)
         {
             var userId = GetUserId();
-            await _userProfileService.UpdateMyProfileAsync(userId, request);
+            await _userProfileService.UpdateMyProfileAsync(userId, request , cancellationToken);
 
-            return NoContent();
+            var response = ApiResponse<object>.Success(null, "Profile updated successfully.");
+
+            return StatusCode(response.StatusCode, response);
+
+         
 
         }
     }

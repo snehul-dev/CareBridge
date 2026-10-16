@@ -14,6 +14,8 @@ namespace UserService.Application.Validators
                 .NotEmpty()
                 .WithMessage("Email is required.")
                 .EmailAddress()
+                .WithMessage("Please enter a valid email address.")
+                .Matches(@"^[a-zA-Z0-9]+([._%+-][a-zA-Z0-9]+)*@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+$")
                 .WithMessage("Please enter a valid email address.");
 
             RuleFor(x => x.Password)

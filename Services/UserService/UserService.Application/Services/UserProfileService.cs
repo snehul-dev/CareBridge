@@ -1,6 +1,6 @@
 ﻿
 using UserService.Application.DTOs.Users;
-using UserService.Application.Exceptions;
+using CareBridge.Shared.Exceptions;
 using UserService.Application.Interfaces;
 
 namespace UserService.Application.Services
@@ -15,9 +15,11 @@ namespace UserService.Application.Services
         }
 
         
-        public async Task<MyProfileResponse> GetMyProfileAsync(Guid userId)
+        public async Task<MyProfileResponse> GetMyProfileAsync(Guid userId , 
+            CancellationToken cancellationToken
+            )
         {
-            var user = await _userRepository.GetByIdAsync(userId);
+            var user = await _userRepository.GetByIdAsync(userId , cancellationToken);
 
             if (user is null)
                 throw new NotFoundException("User not found.");
@@ -83,9 +85,10 @@ namespace UserService.Application.Services
             };
         }
 
-        public async Task UpdateMyProfileAsync( Guid userId,UpdateMyProfileRequest request)
+        public async Task UpdateMyProfileAsync( Guid userId,UpdateMyProfileRequest request ,
+            CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetByIdAsync(userId);
+            var user = await _userRepository.GetByIdAsync(userId , cancellationToken);
 
             if (user is null)
                 throw new NotFoundException("User not found.");
@@ -202,7 +205,7 @@ namespace UserService.Application.Services
                 user.LabProfile.UpdatedAt = DateTime.UtcNow;
             }
 
-            await _userRepository.SaveChangesAsync();
+            await _userRepository.SaveChangesAsync(cancellationToken);
         }
     }
 }

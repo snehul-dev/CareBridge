@@ -16,9 +16,9 @@ namespace UserService.Infrastructure.Repositories
         {
             _context = context;
         }
-        public async Task<Role?> GetRoleByName(string roleName)
+        public async Task<Role?> GetRoleByName(string roleName , CancellationToken cancellationToken)
         {
-           return await _context.Roles.FirstOrDefaultAsync(n => n.Name == roleName);
+           return await _context.Roles.FirstOrDefaultAsync(n => n.Name == roleName , cancellationToken);
 
         }
     }

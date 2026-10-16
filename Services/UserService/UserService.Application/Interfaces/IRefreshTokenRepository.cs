@@ -7,10 +7,10 @@ namespace UserService.Application.Interfaces
 {
     public interface IRefreshTokenRepository
     {
-        Task<RefreshToken?> GetByHashAsync(string tokenHash);
+        Task<RefreshToken?> GetByHashAsync(string tokenHash , CancellationToken cancellationToken);
 
-        Task AddAsync(RefreshToken refreshToken);
+        Task AddAsync(RefreshToken refreshToken , CancellationToken cancellationToken);
 
-        Task SaveChangesAsync();
+        Task SaveChangesAsync(CancellationToken cancellationToken);
     }
 }

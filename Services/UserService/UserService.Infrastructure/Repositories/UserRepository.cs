@@ -17,22 +17,22 @@ namespace UserService.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task AddAsync(User user)
+        public async Task AddAsync(User user , CancellationToken cancellationToken)
         {
-           await _context.Users.AddAsync(user);
+           await _context.Users.AddAsync(user , cancellationToken);
         }
 
-        public async Task AddDoctorProfileAsync(DoctorProfile doctorProfile)
+        public async Task AddDoctorProfileAsync(DoctorProfile doctorProfile , CancellationToken cancellationToken)
         {
-            await _context.DoctorProfiles.AddAsync(doctorProfile);
+            await _context.DoctorProfiles.AddAsync(doctorProfile , cancellationToken);
         }
 
-        public async Task AddPatientProfileAsync(PatientProfile patientProfile)
+        public async Task AddPatientProfileAsync(PatientProfile patientProfile , CancellationToken cancellationToken)
         {
-            await _context.PatientProfiles.AddAsync(patientProfile);
+            await _context.PatientProfiles.AddAsync(patientProfile,cancellationToken);
         }
 
-        public async Task<User?> GetByEmailAsync(string email)
+        public async Task<User?> GetByEmailAsync(string email , CancellationToken cancellationToken)
         {
             return await _context.Users
               .Include(u => u.UserRoles)
@@ -40,11 +40,11 @@ namespace UserService.Infrastructure.Repositories
               .Include(u => u.PatientProfile)
               .Include(u => u.DoctorProfile)
               .Include(u => u.LabProfile)
-              .FirstOrDefaultAsync(u => u.Email == email);
+              .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
 
         }
 
-        public async Task<User?> GetByIdAsync(Guid id)
+        public async Task<User?> GetByIdAsync(Guid id , CancellationToken cancellationToken)
         {
             return await _context.Users
                         .Include(u => u.UserRoles)
@@ -52,17 +52,17 @@ namespace UserService.Infrastructure.Repositories
                         .Include(u => u.PatientProfile)
                         .Include(u => u.DoctorProfile)
                         .Include(u => u.LabProfile)
-                        .FirstOrDefaultAsync(u => u.Id == id);
+                        .FirstOrDefaultAsync(u => u.Id == id , cancellationToken);
         }
 
-        public async Task<User?> GetMyProfileAsync(Guid userId)
+        public async Task<User?> GetMyProfileAsync(Guid userId , CancellationToken cancellationToken)
         {
-            return await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            return await _context.Users.FirstOrDefaultAsync(u => u.Id == userId , cancellationToken);
         }
 
-        public async Task SaveChangesAsync()
+        public async Task SaveChangesAsync(CancellationToken cancellationToken)
         {
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
  

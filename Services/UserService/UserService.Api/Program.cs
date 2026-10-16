@@ -1,9 +1,12 @@
 
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
+using CareBridge.Shared.Responses;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using UserService.Api.Middleware;
 using UserService.Application;
 using UserService.Infrastructure;
@@ -18,8 +21,34 @@ builder.Services.AddApplication();
 // Controllers
 builder.Services.AddControllers();
 
+// Standardize automatic model validation errors
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState
+            .SelectMany(entry => entry.Value!.Errors)
+            .Select(error =>
+                string.IsNullOrWhiteSpace(error.ErrorMessage)
+                    ? "Invalid input."
+                    : error.ErrorMessage)
+            .ToList();
+
+        var response = ApiResponse<object>.Fail(
+            errors,
+            "Validation failed",
+            HttpStatusCode.BadRequest);
+
+        return new ObjectResult(response)
+        {
+            StatusCode = response.StatusCode
+        };
+    };
+});
+
 builder.Services.AddEndpointsApiExplorer();
 
+// Swagger configuration
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -83,14 +112,58 @@ builder.Services
 
             ClockSkew = TimeSpan.FromSeconds(30)
         };
-    });
 
+        // Standardize 401 and 403 responses
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = async context =>
+            {
+                // Suppress the default challenge response
+                context.HandleResponse();
+
+                context.Response.StatusCode =
+                    StatusCodes.Status401Unauthorized;
+
+                var response = ApiResponse<object>.Fail(
+                    new[]
+                    {
+                        "A valid access token is required."
+                    },
+                    "Unauthorized",
+                    HttpStatusCode.Unauthorized);
+
+                await context.Response.WriteAsJsonAsync(
+                    response,
+                    cancellationToken:
+                        context.HttpContext.RequestAborted);
+            },
+
+            OnForbidden = async context =>
+            {
+                context.Response.StatusCode =
+                    StatusCodes.Status403Forbidden;
+
+                var response = ApiResponse<object>.Fail(
+                    new[]
+                    {
+                        "You do not have permission to perform this action."
+                    },
+                    "Forbidden",
+                    HttpStatusCode.Forbidden);
+
+                await context.Response.WriteAsJsonAsync(
+                    response,
+                    cancellationToken:
+                        context.HttpContext.RequestAborted);
+            }
+        };
+    });
 
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-
+// Seed admin user
 await AdminSeeder.SeedAsync(app.Services);
 
 // Global exception middleware
@@ -102,7 +175,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
 
 app.UseHttpsRedirection();
 

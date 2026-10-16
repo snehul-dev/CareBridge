@@ -43,6 +43,10 @@ namespace UserService.Infrastructure.Persistence.Configurations
                 .IsRequired()
                 .HasPrecision(10, 2);
 
+            builder.Property(x => x.Address)
+                .IsRequired()
+                .HasMaxLength(250);
+
             builder.Property(x => x.City)
                 .HasMaxLength(100);
 

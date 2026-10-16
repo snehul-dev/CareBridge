@@ -8,13 +8,13 @@ namespace UserService.Application.Interfaces
 {
     public interface IAuthService
     {
-        Task RegisterPatientAsync(RegisterPatientRequest request);
-        Task RegisterDoctorAsync(RegisterDoctorRequest request);
-        Task RegisterLabAsync(RegisterLabRequest request);
+        Task RegisterPatientAsync(RegisterPatientRequest request , CancellationToken cancellationToken);
+        Task RegisterDoctorAsync(RegisterDoctorRequest request , CancellationToken cancellationToken);
+        Task RegisterLabAsync(RegisterLabRequest request , CancellationToken cancellationToken);
 
-        Task<LoginResponse> RefreshAsync(RefreshTokenRequest request);
-        Task LogoutAsync(RefreshTokenRequest request);
+        Task<LoginResponse> RefreshAsync(RefreshTokenRequest request, CancellationToken cancellationToken);
+        Task LogoutAsync(RefreshTokenRequest request, CancellationToken cancellationToken);
 
-        Task<LoginResponse> LoginAsync(LoginRequest request);
+        Task<LoginResponse> LoginAsync(LoginRequest request , CancellationToken cancellationToken);
     }
 }

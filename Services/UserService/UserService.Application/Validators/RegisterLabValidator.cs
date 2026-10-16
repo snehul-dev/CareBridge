@@ -17,7 +17,9 @@ namespace UserService.Application.Validators
                  .EmailAddress()
                  .WithMessage("Enter a valid email address.")
                  .MaximumLength(255)
-                 .WithMessage("Email cannot exceed 255 characters.");
+                 .WithMessage("Email cannot exceed 255 characters.")
+                 .Matches(@"^[a-zA-Z0-9]+([._%+-][a-zA-Z0-9]+)*@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+$")
+                 .WithMessage("Please enter a valid email address.");
 
             // Password
             RuleFor(x => x.Password)

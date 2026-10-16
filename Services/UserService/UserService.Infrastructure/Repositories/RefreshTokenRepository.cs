@@ -15,12 +15,12 @@ namespace UserService.Infrastructure.Repositories
         {
             _context = context;
         } 
-        public async Task AddAsync(RefreshToken refreshToken)
+        public async Task AddAsync(RefreshToken refreshToken , CancellationToken cancellationToken)
         {
-            await _context.RefreshTokens.AddAsync(refreshToken);
+            await _context.RefreshTokens.AddAsync(refreshToken , cancellationToken);
         }
 
-        public async Task<RefreshToken?> GetByHashAsync(string tokenHash)
+        public async Task<RefreshToken?> GetByHashAsync(string tokenHash , CancellationToken cancellationToken)
         {
             return await _context.RefreshTokens
           .Include(rt => rt.User)
@@ -30,12 +30,12 @@ namespace UserService.Infrastructure.Repositories
               .ThenInclude(u => u.DoctorProfile)
           .Include(rt => rt.User)
               .ThenInclude(u => u.LabProfile)
-          .FirstOrDefaultAsync(rt => rt.TokenHash == tokenHash);
+          .FirstOrDefaultAsync(rt => rt.TokenHash == tokenHash , cancellationToken);
         }
 
-        public async Task SaveChangesAsync()
+        public async Task SaveChangesAsync(CancellationToken cancellationToken)
         {
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
     }
 }

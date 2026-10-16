@@ -1,82 +1,67 @@
-﻿using System.Text.Json;
-using UserService.Application.Exceptions;
+﻿
+using System.Net;
+using CareBridge.Shared.Responses;
+using CareBridge.Shared.Exceptions;
 
-namespace UserService.Api.Middleware
+namespace UserService.Api.Middleware;
+
+public sealed class GlobalExceptionMiddleware
 {
-    public class GlobalExceptionMiddleware
+    private readonly RequestDelegate _next;
+    private readonly ILogger<GlobalExceptionMiddleware> _logger;
+
+    public GlobalExceptionMiddleware(
+        RequestDelegate next,
+        ILogger<GlobalExceptionMiddleware> logger)
     {
-        private readonly RequestDelegate _next;
-        private readonly ILogger<GlobalExceptionMiddleware> _logger;
+        _next = next;
+        _logger = logger;
+    }
 
-        public GlobalExceptionMiddleware(
-            RequestDelegate next,
-            ILogger<GlobalExceptionMiddleware> logger)
+    public async Task InvokeAsync(HttpContext context)
+    {
+        try
         {
-            _next = next;
-            _logger = logger;
+            await _next(context);
         }
-
-        public async Task InvokeAsync(HttpContext context)
+        catch (Exception ex)
         {
-            try
+            _logger.LogError(ex,"An exception occurred while processing {Path}",context.Request.Path);
+
+            if (context.Response.HasStarted)
             {
-                // Pass the request to the next middleware
-                await _next(context);
+                throw;
             }
-            catch (Exception ex)
+
+            context.Response.Clear();
+
+            var (statusCode, message) = ex switch
             {
-                // Log the exception for developers
-                _logger.LogError(
-                    ex,
-                    "An exception occurred while processing {Path}",
-                    context.Request.Path);
+                NotFoundException =>
+                    (HttpStatusCode.NotFound, ex.Message),
 
-                // Cannot replace a response that has already started
-                if (context.Response.HasStarted)
-                {
-                    throw;
-                }
+                BadRequestException =>
+                    (HttpStatusCode.BadRequest, ex.Message),
 
-                // Clear the existing response
-                context.Response.Clear();
+                UnauthorizedAccessException => 
+                (HttpStatusCode.Forbidden , ex.Message),
 
-                // Determine the HTTP status code
-                var statusCode = ex switch
-                {
-                    NotFoundException =>
-                        StatusCodes.Status404NotFound,
+                _ =>
+                    (
+                        HttpStatusCode.InternalServerError,
+                        "An unexpected error occurred."
+                    )
+            };
 
-                    BadRequestException =>
-                        StatusCodes.Status400BadRequest,
+            context.Response.StatusCode = (int)statusCode;
+            context.Response.ContentType = "application/json";
 
-                    _ =>
-                        StatusCodes.Status500InternalServerError
-                };
+            var response = ApiResponse<object>.Fail(
+                new[] { message },
+                message,
+                statusCode);
 
-                // Set a safe error message
-                var message = ex switch
-                {
-                    NotFoundException => ex.Message,
-                    BadRequestException => ex.Message,
-                    _ => "An unexpected error occurred."
-                };
-
-                // Set the response status and content type
-                context.Response.StatusCode = statusCode;
-                context.Response.ContentType = "application/json";
-
-                // Create a consistent error response
-                var response = new
-                {
-                    statusCode = statusCode,
-                    message = message,
-                    traceId = context.TraceIdentifier
-                };
-
-                // Send the JSON response to the client
-                await context.Response.WriteAsync(
-                    JsonSerializer.Serialize(response));
-            }
+            await context.Response.WriteAsJsonAsync(response,cancellationToken: context.RequestAborted);
         }
     }
 }

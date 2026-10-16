@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace UserService.Application.Exceptions
+namespace CareBridge.Shared.Exceptions
 {
     public class NotFoundException:Exception
     {
