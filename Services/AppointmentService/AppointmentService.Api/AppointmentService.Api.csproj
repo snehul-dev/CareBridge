@@ -8,15 +8,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+	  <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
 	  <PackageReference Include="Microsoft.AspNetCore.OpenApi" />  
 	  <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
 	    <PrivateAssets>all</PrivateAssets>
 	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-	  </PackageReference></ItemGroup>
+	  </PackageReference>  
+	  <PackageReference Include="Swashbuckle.AspNetCore" /></ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\AppointmentService.Application\AppointmentService.Application.csproj" />
     <ProjectReference Include="..\AppointmentService.Infrastructure\AppointmentService.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Shared\CareBridge.Shared\CareBridge.Shared.csproj" />
   </ItemGroup>
 
 </Project>

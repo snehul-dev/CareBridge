@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
-using UserService.Api.Middleware;
+using CareBridge.Shared.Middlewares;
 using UserService.Application;
 using UserService.Infrastructure;
 using UserService.Infrastructure.Persistence;
@@ -162,6 +162,8 @@ builder.Services
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+
 
 // Seed admin user
 await AdminSeeder.SeedAsync(app.Services);

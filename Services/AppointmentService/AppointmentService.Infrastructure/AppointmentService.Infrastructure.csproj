@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\Shared\CareBridge.Shared\CareBridge.Shared.csproj" />
     <ProjectReference Include="..\AppointmentService.Application\AppointmentService.Application.csproj" />
     <ProjectReference Include="..\AppointmentService.Domain\AppointmentService.Domain.csproj" />
   </ItemGroup>

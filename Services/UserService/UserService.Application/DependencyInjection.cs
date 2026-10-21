@@ -24,10 +24,6 @@ namespace UserService.Application
              typeof(UserMappingProfile).Assembly);
 
 
-
-
-
-
             return services;
         }
     }

@@ -19,4 +19,9 @@
     <ProjectReference Include="..\AppointmentService.Domain\AppointmentService.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Mappings\" />
+    <Folder Include="Validators\" />
+  </ItemGroup>
+
 </Project>
