@@ -1,24 +1,24 @@
 
-using System.Net;
-using System.Security.Claims;
-using System.Text;
+using CareBridge.Shared.Middlewares;
 using CareBridge.Shared.Responses;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
-using CareBridge.Shared.Middlewares;
+using System.Net;
+using System.Security.Claims;
+using System.Text;
 using UserService.Application;
 using UserService.Infrastructure;
 using UserService.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Register services
+// Register application and infrastructure services
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
 
-// Controllers
+// Register controllers
 builder.Services.AddControllers();
 
 // Standardize automatic model validation errors
@@ -48,7 +48,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 
 builder.Services.AddEndpointsApiExplorer();
 
-// Swagger configuration
+// Swagger configuration with JWT Bearer authentication
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -69,7 +69,7 @@ builder.Services.AddSwaggerGen(options =>
         });
 });
 
-// JWT Authentication
+// JWT authentication
 builder.Services
     .AddAuthentication(options =>
     {
@@ -93,32 +93,32 @@ builder.Services
             ?? throw new InvalidOperationException(
                 "JWT Audience is missing from configuration.");
 
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
+        options.TokenValidationParameters =
+            new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
 
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtSecret)),
+                IssuerSigningKey = new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(jwtSecret)),
 
-            ValidateIssuer = true,
-            ValidIssuer = issuer,
+                ValidateIssuer = true,
+                ValidIssuer = issuer,
 
-            ValidateAudience = true,
-            ValidAudience = audience,
+                ValidateAudience = true,
+                ValidAudience = audience,
 
-            ValidateLifetime = true,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.FromSeconds(30),
 
-            RoleClaimType = ClaimTypes.Role,
+                RoleClaimType = ClaimTypes.Role
+            };
 
-            ClockSkew = TimeSpan.FromSeconds(30)
-        };
-
-        // Standardize 401 and 403 responses
+        // Standardized unauthorized and forbidden responses
         options.Events = new JwtBearerEvents
         {
+            // Handle unauthorized requests (401)
             OnChallenge = async context =>
             {
-                // Suppress the default challenge response
                 context.HandleResponse();
 
                 context.Response.StatusCode =
@@ -138,6 +138,7 @@ builder.Services
                         context.HttpContext.RequestAborted);
             },
 
+            // Handle authenticated users without permission (403)
             OnForbidden = async context =>
             {
                 context.Response.StatusCode =
@@ -159,11 +160,10 @@ builder.Services
         };
     });
 
+// Authorization
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
-
-
 
 // Seed admin user
 await AdminSeeder.SeedAsync(app.Services);
@@ -178,11 +178,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// HTTPS redirection
 app.UseHttpsRedirection();
 
+// Authentication must run before authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Map controller endpoints
 app.MapControllers();
 
 app.Run();

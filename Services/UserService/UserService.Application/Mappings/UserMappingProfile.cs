@@ -1,6 +1,7 @@
 ﻿
 using AutoMapper;
 using UserService.Application.DTOs.Auth;
+using UserService.Application.DTOs.Doctors;
 using UserService.Application.DTOs.Users;
 using UserService.Domain.Entities;
 using UserService.Domain.Enums;
@@ -72,6 +73,19 @@ namespace UserService.Application.Mappings
             // User to MyProfileResponse
 
             CreateMap<User, MyProfileResponse>();
+
+            //DoctorProfile to DoctorSearchResponse
+
+            CreateMap<DoctorProfile, DoctorSearchResponse>()
+                .ForMember(dest => dest.FirstName,
+                opt => opt.MapFrom(src => src.User.FirstName))
+                .ForMember(dest => dest.LastName,
+                opt => opt.MapFrom(src => src.User.LastName))
+
+                .ForMember(dest => dest.ProfileImageUrl,
+                opt => opt.MapFrom(src => src.User.ProfileImageUrl))
+                .ForMember(dest => dest.SpecializationName,
+                opt => opt.MapFrom(src => src.Specialization.Name));
         }
     }
 }
