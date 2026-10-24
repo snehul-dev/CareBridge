@@ -3,6 +3,9 @@ using AppointmentService.Application.DTOs;
 using AppointmentService.Application.Interfaces;
 using AppointmentService.Domain.Entities;
 using AppointmentService.Domain.Enums;
+using AutoMapper;
+using CareBridge.Shared.Exceptions;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -14,15 +17,29 @@ namespace AppointmentService.Application.Services
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IDoctorAvailabilityRepository _doctorAvailabilityRepository;
         private readonly IDoctorUnavailablePeriodRepository _doctorUnavailablePeriodRepository;
+        private readonly IMapper _mapper;
+        private readonly TimeZoneInfo _clinicTimeZone;
 
         public AppointmentService(IAppointmentRepository appointmentRepository,
             IDoctorAvailabilityRepository doctorAvailabilityRepository,
-            IDoctorUnavailablePeriodRepository doctorUnavailablePeriodRepository
+            IDoctorUnavailablePeriodRepository doctorUnavailablePeriodRepository,
+            IMapper mapper,
+            IConfiguration configuration
+            
             )
         {
             _appointmentRepository = appointmentRepository;
             _doctorAvailabilityRepository = doctorAvailabilityRepository;
             _doctorUnavailablePeriodRepository = doctorUnavailablePeriodRepository;
+            _mapper = mapper;
+
+            var timeZoneId = configuration["Clinic:TimeZoneId"]
+                ?? throw new InvalidOperationException(
+                    "Clinic time zone is not configured.");
+
+            _clinicTimeZone =
+                TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+
         }
 
         public async Task<AppointmentResponseDto> BookAppointmentAsync(BookAppointmentRequestDto request,
@@ -85,15 +102,34 @@ namespace AppointmentService.Application.Services
 
         }
 
+        public async Task<AppointmentResponseDto> GetAppointmentById(Guid id,Guid patientId,
+            CancellationToken cancellationToken)
+        {
+            if(id == Guid.Empty)
+            {
+                throw new BadRequestException("Appointment id cannot be empty");
+            }
+           var appointment = await _appointmentRepository.GetAppointmentById(id,patientId, cancellationToken);
+
+            if(appointment is null)
+            {
+                throw new BadRequestException("Appointment not found.");
+            }
+            return _mapper.Map<AppointmentResponseDto>(appointment);
+
+        }
+
         public async Task<IReadOnlyList<AvailableAppointmentSlotDto>> GetAvailableSlotsAsync(Guid doctorId,
             DateOnly date, CancellationToken cancellationToken)
         {
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var now = DateTime.Now;
-            var today = DateOnly.FromDateTime(now);
-            var currentTime = TimeOnly.FromDateTime(now);
+            var now = TimeZoneInfo.ConvertTime(
+                         DateTimeOffset.UtcNow,
+                         _clinicTimeZone);
+            var today = DateOnly.FromDateTime(now.DateTime);
+            var currentTime = TimeOnly.FromDateTime(now.DateTime);
 
             if (date < today)
             {
@@ -193,11 +229,30 @@ namespace AppointmentService.Application.Services
                 .OrderBy(s => s.StartTime)
                 .ToList();
 
-
-
-
-
         }
+
+        public async Task<IReadOnlyList<AppointmentResponseDto>> GetDoctorAppointmentsAsync(Guid doctorId, CancellationToken cancellationToken)
+        {
+            if(doctorId == Guid.Empty)
+            {
+                throw new BadRequestException("Doctor ID cannot be empty.");
+            }
+
+            var appointments = await _appointmentRepository.GetByDoctorIdAsync(doctorId, cancellationToken);
+            return _mapper.Map<List<AppointmentResponseDto>>(appointments);
+        }
+
+        public async Task<IReadOnlyList<AppointmentResponseDto>> GetMyAppointmentsAsync(Guid patientId, CancellationToken cancellationToken)
+        {
+            if(patientId == Guid.Empty)
+            {
+                throw new BadRequestException("Patient ID cannot be empty.");
+            }
+
+            var appointments = await _appointmentRepository.GetByPatientIdAsync(patientId, cancellationToken);
+            return _mapper.Map<List<AppointmentResponseDto>>(appointments);
+        }
+
         private async Task<TimeOnly> ValidateRequestedSlotAsync(Guid doctorId,
             DateOnly date,
             TimeOnly startTime,
@@ -206,9 +261,11 @@ namespace AppointmentService.Application.Services
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var now = DateTime.Now;
-            var today = DateOnly.FromDateTime(now);
-            var currentTime = TimeOnly.FromDateTime(now);
+            var now = TimeZoneInfo.ConvertTime(
+                        DateTimeOffset.UtcNow,
+                        _clinicTimeZone);
+            var today = DateOnly.FromDateTime(now.DateTime);
+            var currentTime = TimeOnly.FromDateTime(now.DateTime);
 
             if (date < today)
             {
@@ -224,7 +281,7 @@ namespace AppointmentService.Application.Services
             var endTime = startTime.AddMinutes(AppointmentRules.DurationMinutes);
 
             //get the doctor schedule for selected date
-
+             
             var schedules = await _doctorAvailabilityRepository.GetByDoctorAndDayAsync(doctorId,
                 date.DayOfWeek,
                 cancellationToken);
@@ -232,7 +289,7 @@ namespace AppointmentService.Application.Services
             //Verify the entire slot fits within a valid schedule.
             var fitsSchedule = schedules.Any(schedule =>
              schedule.IsAvailable &&
-            startTime >= schedule.StartTime &&
+            startTime >= schedule.StartTime && 
             endTime <= schedule.EndTime &&
             (startTime - schedule.StartTime).TotalMinutes
                 % AppointmentRules.DurationMinutes == 0);
@@ -240,8 +297,7 @@ namespace AppointmentService.Application.Services
 
             if (!fitsSchedule)
             {
-                throw new InvalidOperationException(
-                    "The selected slot is outside the doctor's schedule.");
+                throw new InvalidOperationException("The selected slot is outside the doctor's schedule.");
             }
 
             //Check whether the doctor is unavailable on this date.
@@ -253,8 +309,7 @@ namespace AppointmentService.Application.Services
 
             if (unavailablePeriods.Count > 0)
             {
-                throw new InvalidOperationException(
-                    "The doctor is unavailable on the selected date.");
+                throw new InvalidOperationException("The doctor is unavailable on the selected date.");
             }
 
             //Recheck existing appointments.
@@ -279,5 +334,7 @@ namespace AppointmentService.Application.Services
 
 
         }
+
+        
     }
 }

@@ -18,5 +18,13 @@ namespace AppointmentService.Application.Interfaces
             Guid patientId,
             CancellationToken cancellationToken
             );
+        Task<IReadOnlyList<AppointmentResponseDto>> GetMyAppointmentsAsync(Guid patientId, 
+            CancellationToken cancellationToken);
+
+        Task<IReadOnlyList<AppointmentResponseDto>> GetDoctorAppointmentsAsync(
+            Guid doctorId, CancellationToken cancellationToken
+            );
+
+        Task<AppointmentResponseDto> GetAppointmentById(Guid id, Guid patientId, CancellationToken cancellationToken);
     }
 }

@@ -60,7 +60,7 @@ namespace AppointmentService.Infrastructure.Clients
                 query.Add(
                     $"city={Uri.EscapeDataString(city.Trim())}");
             }
-
+             
             if (!string.IsNullOrWhiteSpace(district))
             {
                 query.Add(

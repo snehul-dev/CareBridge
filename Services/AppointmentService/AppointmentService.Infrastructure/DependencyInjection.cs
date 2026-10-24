@@ -29,6 +29,7 @@ namespace AppointmentService.Infrastructure
 
             // Application service
             services.AddScoped<IAppointmentService,AppointmentService.Application.Services.AppointmentService>();
+           
 
             // Access the current incoming HTTP request
             services.AddHttpContextAccessor();

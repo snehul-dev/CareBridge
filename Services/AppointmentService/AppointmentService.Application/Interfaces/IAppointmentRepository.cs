@@ -15,6 +15,11 @@ namespace AppointmentService.Application.Interfaces
 
         Task AddAsync(Appointment appointment, CancellationToken cancellationToken);
 
+        Task<IReadOnlyList<Appointment>> GetByDoctorIdAsync(Guid doctorId, CancellationToken cancellationToken);
+
+        Task<Appointment?> GetAppointmentById(Guid id,Guid patientId, CancellationToken cancellationToken);
+
+
         Task SaveChangesAsync(CancellationToken cancellationToken);
     }
 }

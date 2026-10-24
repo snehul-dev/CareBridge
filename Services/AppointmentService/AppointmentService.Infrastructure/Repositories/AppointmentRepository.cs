@@ -23,6 +23,17 @@ namespace AppointmentService.Infrastructure.Repositories
             await _context.Appointments.AddAsync(appointment , cancellationToken);
         }
 
+        public async Task<Appointment?> GetAppointmentById(Guid id,Guid patientId,
+            CancellationToken cancellationToken)
+        {
+
+            return await _context.Appointments
+                .FirstOrDefaultAsync(x => x.Id == id && 
+                x.PatientId == patientId
+                , cancellationToken);
+                
+        }
+
         public async Task<IReadOnlyList<Appointment>> GetByDoctorAndDateAsync(Guid doctorId, DateOnly date, CancellationToken cancellationToken)
         {
             return await _context.Appointments
@@ -30,6 +41,16 @@ namespace AppointmentService.Infrastructure.Repositories
                 .Where(x => x.DoctorId == doctorId &&
                        x.AppointmentDate == date)
                 .OrderBy(x => x.StartTime)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<Appointment>> GetByDoctorIdAsync(Guid doctorId, CancellationToken cancellationToken)
+        {
+            return await _context.Appointments
+                .AsNoTracking()
+                .Where(x => x.DoctorId == doctorId)
+                .OrderBy(x => x.AppointmentDate)
+                .ThenBy(x => x.StartTime)
                 .ToListAsync(cancellationToken);
         }
 

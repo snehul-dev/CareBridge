@@ -16,11 +16,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\Shared\CareBridge.Shared\CareBridge.Shared.csproj" />
     <ProjectReference Include="..\AppointmentService.Domain\AppointmentService.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Mappings\" />
     <Folder Include="Validators\" />
   </ItemGroup>
 

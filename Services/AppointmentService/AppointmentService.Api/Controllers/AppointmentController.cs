@@ -10,8 +10,8 @@ using System.Security.Claims;
 namespace AppointmentService.Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
-    public class AppointmentController:ControllerBase
+    [Route("api/appointments")]
+    public class AppointmentController : ControllerBase
     {
 
         private readonly IAppointmentService _appointmentService;
@@ -30,7 +30,7 @@ namespace AppointmentService.Api.Controllers
             cancellationToken);
 
             var response = ApiResponse<IReadOnlyList<AvailableAppointmentSlotDto>>
-                .Success(slot, 
+                .Success(slot,
                 "Available appointment slots retrieved successfully.",
                 HttpStatusCode.OK);
 
@@ -39,39 +39,104 @@ namespace AppointmentService.Api.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Patient")]
-        public async Task<ActionResult<ApiResponse<AppointmentResponseDto>>>
-        BookAppointment(
-        [FromBody] BookAppointmentRequestDto request,
-        CancellationToken cancellationToken)
+        public async Task<
+            ActionResult<ApiResponse<AppointmentResponseDto>>>
+            BookAppointment(
+                [FromBody] BookAppointmentRequestDto request,
+                CancellationToken cancellationToken)
         {
-            var patientIdClaim =
-                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var patientId = GetUserId();
 
-            if (!Guid.TryParse(patientIdClaim, out var patientId))
+            var appointment =
+                await _appointmentService.BookAppointmentAsync(
+                    request,
+                    patientId,
+                    cancellationToken);
+
+            var response =
+                ApiResponse<AppointmentResponseDto>.Success(
+                    appointment,
+                    "Appointment booked successfully.",
+                    HttpStatusCode.Created);
+
+            return StatusCode(
+                StatusCodes.Status201Created,
+                response);
+        }
+
+        [HttpGet("my")]
+        [Authorize(Roles = "Patient")]
+        public async Task<
+                    ActionResult<ApiResponse<IReadOnlyList<AppointmentResponseDto>>>>
+                    GetMyAppointments(
+                        CancellationToken cancellationToken)
+        {
+            var patientId = GetUserId();
+
+            var appointments =
+                await _appointmentService.GetMyAppointmentsAsync(
+                    patientId,
+                    cancellationToken);
+
+            var response =
+                ApiResponse<IReadOnlyList<AppointmentResponseDto>>.Success(
+                    appointments,
+                    "Your appointments retrieved successfully.",
+                    HttpStatusCode.OK);
+
+            return Ok(response);
+        }
+
+        [HttpGet("doctor/my")]
+        [Authorize(Roles = "Doctor")]
+        public async Task<
+                        ActionResult<ApiResponse<IReadOnlyList<AppointmentResponseDto>>>>
+                        GetDoctorAppointmentsAsync(
+                        CancellationToken cancellationToken)
+        {
+            var doctorId = GetUserId();
+
+            var appointments =
+                await _appointmentService.GetDoctorAppointmentsAsync(doctorId, cancellationToken);
+
+            var response =
+                ApiResponse<IReadOnlyList<AppointmentResponseDto>>
+                .Success(
+                    appointments,
+                    "Your appointments retrieved successfully.",
+                    HttpStatusCode.OK
+                    );
+            return Ok(response);
+        }
+
+        [HttpGet("{id}")]
+        [Authorize(Roles = "Patient")]
+        public async Task<ActionResult<ApiResponse<AppointmentResponseDto>>> GetAppointmentById(Guid id , CancellationToken cancellationToken)
+        {
+            var patientId = GetUserId();
+            var appointment = await _appointmentService.GetAppointmentById(id, patientId, cancellationToken);
+
+            var response = ApiResponse<AppointmentResponseDto>
+                .Success(
+                appointment,
+                "Your appointment retrieved successfully.",
+                HttpStatusCode.OK
+                );
+            
+            return Ok(response);
+        }
+
+        private Guid GetUserId()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrWhiteSpace(userId))
             {
-                var unauthorizedResponse =
-                    ApiResponse<AppointmentResponseDto>.Fail(
-                        new[]
-                        {
-                    "User is not authenticated with a valid patient ID."
-                        },
-                        "Unauthorized",
-                        HttpStatusCode.Unauthorized);
-
-                return Unauthorized(unauthorizedResponse);
+                throw new UnauthorizedAccessException(
+                    "User is not authenticated.");
             }
 
-            var appointment = await _appointmentService.BookAppointmentAsync(
-                request,
-                patientId,
-                cancellationToken);
-
-            var response = ApiResponse<AppointmentResponseDto>.Success(
-                appointment,
-                "Appointment booked successfully.",
-                HttpStatusCode.Created);
-
-            return StatusCode(StatusCodes.Status201Created, response);
+            return Guid.Parse(userId);
         }
     }
 }

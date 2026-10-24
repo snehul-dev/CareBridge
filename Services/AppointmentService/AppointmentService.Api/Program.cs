@@ -5,6 +5,7 @@ using AppointmentService.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using AppointmentService.Application.Mappings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -80,6 +81,9 @@ builder.Services.AddAuthentication(options =>
     });
 
 builder.Services.AddAuthorization();
+builder.Services.AddAutoMapper(
+    cfg => { },
+    typeof(AppointmentMapping).Assembly);
 
 var app = builder.Build();
 
