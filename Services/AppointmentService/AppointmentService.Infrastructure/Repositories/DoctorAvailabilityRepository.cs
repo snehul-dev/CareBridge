@@ -16,16 +16,18 @@ namespace AppointmentService.Infrastructure.Repositories
             _context = context;
         }
         public async Task<IReadOnlyList<DoctorAvailability>> GetByDoctorAndDayAsync(Guid doctorId,
-            DayOfWeek dayOfWeek, 
+            DateOnly date, 
             CancellationToken cancellationToken)
         {
             return await _context.DoctorAvailabilities
                 .AsNoTracking()
                 .Where(x => x.DoctorId == doctorId &&
-                x.DayOfWeek == dayOfWeek &&
+                x.AvailableDate == date &&
                 x.IsAvailable)
                 .OrderBy(x => x.StartTime)
                 .ToListAsync(cancellationToken);
         }
+
+        
     }
 }

@@ -38,6 +38,21 @@ builder.Services.AddSwaggerGen(options =>
 // Register AppointmentService infrastructure
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// Register HttpClient for UserService
+builder.Services.AddHttpClient("UserService", client =>
+{
+    var baseUrl = builder.Configuration[
+        "Services:UserService:BaseUrl"];
+
+    if (string.IsNullOrWhiteSpace(baseUrl))
+    {
+        throw new InvalidOperationException(
+            "UserService base URL is missing from configuration.");
+    }
+
+    client.BaseAddress = new Uri(baseUrl);
+});
+
 // Configure JWT authentication
 builder.Services.AddAuthentication(options =>
     {

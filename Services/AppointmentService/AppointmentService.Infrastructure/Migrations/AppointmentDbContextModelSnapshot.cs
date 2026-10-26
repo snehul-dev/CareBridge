@@ -86,13 +86,13 @@ namespace AppointmentService.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DayOfWeek")
+                    b.Property<string>("AvailableDate")
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("DoctorId")
                         .HasColumnType("uuid");
@@ -111,7 +111,7 @@ namespace AppointmentService.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DoctorId", "DayOfWeek");
+                    b.HasIndex("DoctorId", "AvailableDate");
 
                     b.ToTable("DoctorAvailabilities", null, t =>
                         {

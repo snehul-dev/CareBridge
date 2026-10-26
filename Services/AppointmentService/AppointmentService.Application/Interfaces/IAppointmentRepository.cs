@@ -19,6 +19,8 @@ namespace AppointmentService.Application.Interfaces
 
         Task<Appointment?> GetAppointmentById(Guid id,Guid patientId, CancellationToken cancellationToken);
 
+        Task<Appointment?> GetAppointmentForUpdateAsync(Guid id, CancellationToken cancellationToken);
+
 
         Task SaveChangesAsync(CancellationToken cancellationToken);
     }

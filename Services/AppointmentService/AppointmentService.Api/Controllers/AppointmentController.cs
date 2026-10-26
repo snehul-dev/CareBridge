@@ -126,6 +126,97 @@ namespace AppointmentService.Api.Controllers
             return Ok(response);
         }
 
+        [HttpPost("{id:guid}/confirm")]
+        [Authorize(Roles ="Doctor")]
+
+        public async Task<ActionResult<ApiResponse<AppointmentResponseDto>>> ConfirmAppointment(
+            Guid id , 
+            CancellationToken cancellationToken
+            )
+        {
+            var doctorId = GetUserId();
+
+            var appointment = await _appointmentService.ConfirmAppointmentAsync(id, doctorId, cancellationToken);
+
+            var response = ApiResponse<AppointmentResponseDto>
+                .Success(appointment,
+                "Appointment confirmed successfully.",
+                HttpStatusCode.OK);
+
+            return Ok(response);
+        }
+
+        [HttpPost("{id:guid}/cancel")]
+        [Authorize(Roles ="Patient")]
+
+        public async Task<ActionResult<ApiResponse<AppointmentResponseDto>>> CancelAppointment(
+            Guid id,
+            CancellationToken cancellationToken
+            )
+        {
+            var patientId = GetUserId();
+
+            var appointment = await _appointmentService.CancelAppointmentAsync(id,
+                patientId,
+                cancellationToken
+                );
+
+            var response = ApiResponse<AppointmentResponseDto>
+                .Success(appointment,
+                "Appointment cancelled successfully.",
+                HttpStatusCode.OK);
+
+            return Ok(response);
+        }
+
+        [HttpPatch("{id:guid}/reschedule")]
+        [Authorize(Roles = "Patient")]
+
+        public async Task<ActionResult<ApiResponse<AppointmentResponseDto>>> RescheduleAppointment(
+
+            Guid id,
+            [FromBody] RescheduleAppointmentRequestDto request,
+            CancellationToken cancellationToken
+            )
+        {
+            var patientId = GetUserId();
+            var appointment = await _appointmentService.RescheduleAppointmentAsync(id,
+                request,
+                patientId,
+                cancellationToken
+                );
+
+            var response = ApiResponse<AppointmentResponseDto>
+                .Success(
+                appointment,
+                "Appointment rescheduled successfully.",
+                HttpStatusCode.OK
+                );
+
+            return Ok(response);
+        }
+
+        [HttpPost("{id:guid}/reject")]
+        [Authorize(Roles = "Doctor")]
+
+        public async Task<ActionResult<ApiResponse<AppointmentResponseDto>>> RejectAppointment(
+            Guid id,
+            CancellationToken cancellationToken
+            )
+        {
+            var doctorId = GetUserId();
+
+            var appointment = await _appointmentService.RejectAppointmentAsync(id, doctorId, cancellationToken);
+
+            var response = ApiResponse<AppointmentResponseDto>
+                .Success(appointment,
+                "Appointment rejected successfully.",
+                HttpStatusCode.OK
+                );
+
+            return Ok(response);
+        }
+
         private Guid GetUserId()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

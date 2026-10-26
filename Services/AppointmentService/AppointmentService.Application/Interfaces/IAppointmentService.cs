@@ -24,7 +24,32 @@ namespace AppointmentService.Application.Interfaces
         Task<IReadOnlyList<AppointmentResponseDto>> GetDoctorAppointmentsAsync(
             Guid doctorId, CancellationToken cancellationToken
             );
+        Task<AppointmentResponseDto> ConfirmAppointmentAsync(Guid appointmentId,
+            Guid doctorId,
+            CancellationToken cancellationToken
 
-        Task<AppointmentResponseDto> GetAppointmentById(Guid id, Guid patientId, CancellationToken cancellationToken);
+            );
+        Task<AppointmentResponseDto> CancelAppointmentAsync(Guid appointmentId,
+            Guid patientId,
+            CancellationToken cancellationToken
+            );
+
+        Task<AppointmentResponseDto> GetAppointmentById(Guid id, Guid patientId, 
+            CancellationToken cancellationToken);
+
+        Task<AppointmentResponseDto> RejectAppointmentAsync(Guid appointmentId,
+            Guid doctorId,
+            CancellationToken cancellationToken);
+
+        Task<AppointmentResponseDto> RescheduleAppointmentAsync(
+            Guid appointmentId,
+            RescheduleAppointmentRequestDto request,
+            Guid patientId,
+            CancellationToken cancellationToken
+
+
+            );
+
+
     }
 }

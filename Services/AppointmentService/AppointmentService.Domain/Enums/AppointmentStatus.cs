@@ -10,6 +10,7 @@ namespace AppointmentService.Domain.Enums
         Confirmed = 2,
         Cancelled = 3,
         Completed = 4,
-        Rescheduled = 5
+        Rescheduled = 5,
+        Rejected = 6
     }
 }

@@ -17,9 +17,8 @@ namespace AppointmentService.Infrastructure.Persistence.Configurations
             builder.Property(x => x.DoctorId)
                 .IsRequired();
 
-            builder.Property(x => x.DayOfWeek)
-                .HasConversion<string>()
-                .HasMaxLength(10)
+            builder.Property(x => x.AvailableDate)
+                .HasColumnType("date")
                 .IsRequired();
 
             builder.Property(x => x.StartTime)
@@ -42,7 +41,7 @@ namespace AppointmentService.Infrastructure.Persistence.Configurations
             builder.HasIndex(x => new
             {
                 x.DoctorId,
-                x.DayOfWeek
+                x.AvailableDate
             });
 
 

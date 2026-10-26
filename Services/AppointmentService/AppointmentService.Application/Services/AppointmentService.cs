@@ -102,6 +102,85 @@ namespace AppointmentService.Application.Services
 
         }
 
+        public async Task<AppointmentResponseDto> CancelAppointmentAsync(Guid appointmentId, Guid patientId, CancellationToken cancellationToken)
+        {
+            if (appointmentId == Guid.Empty)
+            {
+                throw new BadRequestException("Appointment ID cannot be empty.");
+            }
+
+            if (patientId == Guid.Empty)
+            {
+                throw new BadRequestException("Patient ID cannot be empty.");
+            }
+
+            var appointment = await _appointmentRepository.GetAppointmentForUpdateAsync(
+                appointmentId,
+                cancellationToken
+                );
+
+            if(appointment is null)
+            {
+                throw new NotFoundException("Appointment not found.");
+            }
+
+            if(appointment.PatientId != patientId)
+            {
+                throw new UnauthorizedAccessException("You are not authorized to cancel this appointment.");
+            }
+            if(appointment.Status != AppointmentStatus.Pending && 
+                appointment.Status != AppointmentStatus.Confirmed)
+            {
+                throw new BadRequestException("Only pending or confirmed appointments can be cancelled.");
+            }
+
+            appointment.Status = AppointmentStatus.Cancelled;
+            appointment.UpdatedAt = DateTime.UtcNow;
+
+            await _appointmentRepository.SaveChangesAsync(cancellationToken);
+
+            return _mapper.Map<AppointmentResponseDto>(appointment);
+        }
+
+        public async Task<AppointmentResponseDto> ConfirmAppointmentAsync(Guid appointmentId,
+            Guid doctorId, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if(appointmentId == Guid.Empty)
+            {
+                throw new BadRequestException("Appointment ID cannot be empty.");
+            }
+
+            if(doctorId == Guid.Empty)
+            {
+                throw new BadRequestException("Doctor ID cannot be empty.");
+            }
+
+            var appointment = await _appointmentRepository.GetAppointmentForUpdateAsync(appointmentId, cancellationToken);
+
+            if(appointment is null)
+            {
+                throw new NotFoundException("Appointment not found.");
+            }
+            if(appointment.DoctorId != doctorId)
+            {
+                throw new UnauthorizedAccessException("You are not authorized to confirm this appointment.");
+            }
+            if(appointment.Status != AppointmentStatus.Pending)
+            {
+                throw new BadRequestException("Only pending appointments can be confirmed.");
+            }
+
+            appointment.Status = AppointmentStatus.Confirmed;
+            appointment.UpdatedAt = DateTime.UtcNow;
+
+            await _appointmentRepository.SaveChangesAsync(cancellationToken);
+
+            return _mapper.Map<AppointmentResponseDto>(appointment);
+
+        }
+
         public async Task<AppointmentResponseDto> GetAppointmentById(Guid id,Guid patientId,
             CancellationToken cancellationToken)
         {
@@ -144,7 +223,7 @@ namespace AppointmentService.Application.Services
 
             //find doctor schedule for the week
 
-            var schedules = await _doctorAvailabilityRepository.GetByDoctorAndDayAsync(doctorId, date.DayOfWeek,
+            var schedules = await _doctorAvailabilityRepository.GetByDoctorAndDayAsync(doctorId, date,
                 cancellationToken);
 
             if (schedules.Count == 0)
@@ -253,10 +332,107 @@ namespace AppointmentService.Application.Services
             return _mapper.Map<List<AppointmentResponseDto>>(appointments);
         }
 
+        public async Task<AppointmentResponseDto> RejectAppointmentAsync(Guid appointmentId, Guid doctorId, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (appointmentId == Guid.Empty)
+            {
+                throw new BadRequestException(
+                    "Appointment ID cannot be empty.");
+            }
+
+            if (doctorId == Guid.Empty)
+            {
+                throw new BadRequestException(
+                    "Doctor ID cannot be empty.");
+            }
+            var appointment = await _appointmentRepository.GetAppointmentForUpdateAsync(
+                appointmentId,
+                cancellationToken
+                );
+
+            if (appointment is null)
+            {
+                throw new NotFoundException(
+                    "Appointment not found.");
+            }
+
+            if(appointment.DoctorId != doctorId)
+            {
+                throw new UnauthorizedAccessException(
+            "You are not authorized to reject this appointment.");
+            }
+
+            if (appointment.Status != AppointmentStatus.Pending)
+            {
+                throw new BadRequestException(
+                    "Only pending appointments can be rejected.");
+            }
+
+            appointment.Status = AppointmentStatus.Rejected;
+            appointment.UpdatedAt = DateTime.UtcNow;
+
+            await _appointmentRepository.SaveChangesAsync(
+                cancellationToken);
+
+            return _mapper.Map<AppointmentResponseDto>(appointment);
+        }
+
+        public async Task<AppointmentResponseDto> RescheduleAppointmentAsync(Guid appointmentId, 
+            RescheduleAppointmentRequestDto request, Guid patientId, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            ArgumentNullException.ThrowIfNull(request);
+
+            if(appointmentId == Guid.Empty || patientId == Guid.Empty)
+            {
+                throw new BadRequestException("Appointment ID and patient ID are required.");
+            }
+
+            var appointment = await _appointmentRepository.GetAppointmentForUpdateAsync(
+                appointmentId,
+                cancellationToken
+                );
+
+            if(appointment is null)
+            {
+                throw new NotFoundException("Appointment not found.");
+            }
+            if(appointment.PatientId != patientId)
+            {
+                throw new UnauthorizedAccessException("You are not authorized to reschedule this appointment.");
+            }
+            if(appointment.Status != AppointmentStatus.Pending &&
+                appointment.Status != AppointmentStatus.Confirmed)
+            {
+                throw new BadRequestException("Only pending or confirmed appointments can be rescheduled.");
+            }
+
+            var endTime = await ValidateRequestedSlotAsync(
+                appointment.DoctorId,
+                request.AppointmentDate,
+                request.StartTime,
+                cancellationToken,
+                appointment.Id
+                );
+
+            appointment.AppointmentDate = request.AppointmentDate;
+            appointment.StartTime = request.StartTime;
+            appointment.EndTime = endTime;
+            appointment.Status = AppointmentStatus.Pending;
+            appointment.UpdatedAt = DateTime.UtcNow;
+
+            await _appointmentRepository.SaveChangesAsync(cancellationToken);
+            return _mapper.Map<AppointmentResponseDto>(appointment);
+
+        }
+
         private async Task<TimeOnly> ValidateRequestedSlotAsync(Guid doctorId,
             DateOnly date,
             TimeOnly startTime,
-            CancellationToken cancellationToken
+            CancellationToken cancellationToken,
+            Guid? excludeAppointmentId = null
             )
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -283,7 +459,7 @@ namespace AppointmentService.Application.Services
             //get the doctor schedule for selected date
              
             var schedules = await _doctorAvailabilityRepository.GetByDoctorAndDayAsync(doctorId,
-                date.DayOfWeek,
+                date,
                 cancellationToken);
 
             //Verify the entire slot fits within a valid schedule.
@@ -318,14 +494,15 @@ namespace AppointmentService.Application.Services
                 cancellationToken);
 
             var hasConflict = appointments.Any(a =>
+                a.Id != excludeAppointmentId &&
                 (a.Status == AppointmentStatus.Pending ||
                 a.Status == AppointmentStatus.Confirmed) &&
                 startTime < a.EndTime &&
                 endTime > a.StartTime);
 
-            if (hasConflict)
+            if (hasConflict) 
             {
-                throw new InvalidOperationException(
+                throw new BadRequestException(
                     "The selected slot has already been booked.");
             }
 

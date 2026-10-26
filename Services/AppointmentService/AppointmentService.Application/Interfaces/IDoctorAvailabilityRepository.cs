@@ -7,7 +7,7 @@ namespace AppointmentService.Application.Interfaces
 {
     public interface IDoctorAvailabilityRepository
     {
-        Task<IReadOnlyList<DoctorAvailability>> GetByDoctorAndDayAsync(Guid doctorId, DayOfWeek dayOfWeek,
+        Task<IReadOnlyList<DoctorAvailability>> GetByDoctorAndDayAsync(Guid doctorId, DateOnly date,
             CancellationToken cancellationToken);
     }
 }

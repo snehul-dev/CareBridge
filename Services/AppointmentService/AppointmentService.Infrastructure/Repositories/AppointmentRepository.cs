@@ -34,6 +34,12 @@ namespace AppointmentService.Infrastructure.Repositories
                 
         }
 
+        public async Task<Appointment?> GetAppointmentForUpdateAsync(Guid id, CancellationToken cancellationToken)
+        {
+           return await _context.Appointments
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        }
+
         public async Task<IReadOnlyList<Appointment>> GetByDoctorAndDateAsync(Guid doctorId, DateOnly date, CancellationToken cancellationToken)
         {
             return await _context.Appointments
