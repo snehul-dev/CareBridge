@@ -47,3 +47,6 @@ TestResults/
 
 # Docker
 docker-compose.override.yml
+
+# Unrelated folders
+/Telegram Desktop/
