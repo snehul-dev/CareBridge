@@ -8,10 +8,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-	  <PackageReference Include="Microsoft.AspNetCore.OpenApi" />  </ItemGroup>
+	  <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+	  <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+	    <PrivateAssets>all</PrivateAssets>
+	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	  </PackageReference>  
+	  <PackageReference Include="Swashbuckle.AspNetCore" /></ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\CareService.Application\CareService.Application.csproj" />
+    <ProjectReference Include="..\CareService.Infrastructure\CareService.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
