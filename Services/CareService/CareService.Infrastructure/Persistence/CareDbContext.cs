@@ -21,9 +21,9 @@ namespace CareService.Infrastructure.Persistence
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(CareDbContext).Assembly);
         }
 
-        DbSet<Consultation> Consultations => Set<Consultation>();
-        DbSet<LabOrder> LabOrders => Set<LabOrder>();
-        DbSet<LabOrderItem> LabOrderItems => Set<LabOrderItem>();
+        public DbSet<Consultation> Consultations => Set<Consultation>();
+        public DbSet<LabOrder> LabOrders => Set<LabOrder>();
+        public DbSet<LabOrderItem> LabOrderItems => Set<LabOrderItem>();
         public DbSet<LabResult> LabResults => Set<LabResult>();
         public DbSet<MedicalRecord> MedicalRecords => Set<MedicalRecord>();
         public DbSet<Prescription> Prescriptions => Set<Prescription>();

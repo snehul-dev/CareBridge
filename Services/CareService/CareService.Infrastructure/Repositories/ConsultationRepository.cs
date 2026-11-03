@@ -15,39 +15,44 @@ namespace CareService.Infrastructure.Repositories
         {
             _context = context;
         }
-        public Task AddAsync(Consultation consultation)
+        public  async Task AddAsync(Consultation consultation)
         {
-            throw new NotImplementedException();
+            await _context.Consultations.AddAsync(consultation);
         }
 
-        public Task<Consultation?> GetByAppointmentIdAsync(Guid appointmentId)
+        public async Task<Consultation?> GetByAppointmentIdAsync(Guid appointmentId)
         {
-            throw new NotImplementedException();
+           return await _context.Consultations
+                .FirstOrDefaultAsync(c => c.AppointmentId == appointmentId);
         }
 
-        public Task<IEnumerable<Consultation>> GetByDoctorIdAsync(Guid doctorId)
+        public async Task<IEnumerable<Consultation>> GetByDoctorIdAsync(Guid doctorId)
         {
-            throw new NotImplementedException();
+            return await _context.Consultations
+                .Where(c => c.DoctorId == doctorId)
+                .ToListAsync();
         }
 
-        public Task<Consultation?> GetByIdAsync(Guid id)
+        public async Task<Consultation?> GetByIdAsync(Guid id)
         {
-            throw new NotImplementedException();
+            return await _context.Consultations.FindAsync(id);
         }
 
-        public Task<IEnumerable<Consultation>> GetByPatientIdAsync(Guid patientId)
+        public async Task<IEnumerable<Consultation>> GetByPatientIdAsync(Guid patientId)
         {
-            throw new NotImplementedException();
+            return await _context.Consultations
+                .Where(c => c.PatientId == patientId)
+                .ToListAsync();
         }
 
-        public Task SaveChangesAsync()
+        public async Task SaveChangesAsync()
         {
-            throw new NotImplementedException();
+            await _context.SaveChangesAsync();
         }
 
-        public Task UpdateAsync(Consultation consultation)
+        public void Update(Consultation consultation)
         {
-            throw new NotImplementedException();
+             _context.Consultations.Update(consultation);
         }
     }
 }

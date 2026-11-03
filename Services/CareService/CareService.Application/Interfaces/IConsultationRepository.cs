@@ -16,7 +16,7 @@ namespace CareService.Application.Interfaces
         Task<Consultation?> GetByIdAsync(Guid id);
         Task AddAsync(Consultation consultation);
 
-        Task UpdateAsync(Consultation consultation);
+        void Update(Consultation consultation);
 
         Task SaveChangesAsync();
     }
