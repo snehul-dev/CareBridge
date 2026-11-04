@@ -7,6 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\Contracts\CareBridge.Contracts\CareBridge.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Shared\CareBridge.Shared\CareBridge.Shared.csproj" />
     <ProjectReference Include="..\CareService.Domain\CareService.Domain.csproj" />
   </ItemGroup>
 

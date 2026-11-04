@@ -7,17 +7,21 @@ namespace CareService.Application.Interfaces
 {
     public interface IConsultationRepository
     {
-        Task<IEnumerable<Consultation>> GetByPatientIdAsync(Guid patientId);
+        Task<IEnumerable<Consultation>> GetByPatientIdAsync(Guid patientId , CancellationToken cancellationToken);
 
-        Task<IEnumerable<Consultation>> GetByDoctorIdAsync(Guid doctorId);
+        Task<IEnumerable<Consultation>> GetByDoctorIdAsync(Guid doctorId , CancellationToken cancellationToken);
 
-        Task<Consultation?> GetByAppointmentIdAsync(Guid appointmentId);
+        Task<Consultation?> GetByAppointmentIdAsync(Guid appointmentId,CancellationToken cancellationToken);
+        Task<IEnumerable<Consultation>> GetByPatientAndDoctorAsync(
+            Guid patientId,
+            Guid doctorId,
+            CancellationToken cancellationToken);
 
-        Task<Consultation?> GetByIdAsync(Guid id);
-        Task AddAsync(Consultation consultation);
+        Task<Consultation?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
+        Task AddAsync(Consultation consultation,CancellationToken cancellationToken);
 
         void Update(Consultation consultation);
 
-        Task SaveChangesAsync();
+        Task SaveChangesAsync(CancellationToken cancellationToken);
     }
 }

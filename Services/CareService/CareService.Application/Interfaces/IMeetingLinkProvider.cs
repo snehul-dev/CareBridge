@@ -4,7 +4,9 @@ using System.Text;
 
 namespace CareService.Application.Interfaces
 {
-    internal interface IMeetingLinkProvider
+    public interface IMeetingLinkProvider
     {
+        Task<string> GenerateMeetingLinkAsync(Guid consultationId,
+            CancellationToken cancellationToken);
     }
 }

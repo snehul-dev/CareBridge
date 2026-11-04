@@ -82,7 +82,7 @@ namespace UserService.Infrastructure.Security
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: expiresAt,
+                expires: expiresAt, 
                 signingCredentials: credentials);
 
             var token = new JwtSecurityTokenHandler()

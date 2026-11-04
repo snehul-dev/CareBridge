@@ -512,6 +512,36 @@ namespace AppointmentService.Application.Services
 
         }
 
-        
+        public async Task<AppointmentResponseDto> GetAppointmentForDoctorAsync(
+                Guid appointmentId,
+                Guid doctorId,
+                CancellationToken cancellationToken)
+        {
+            if (appointmentId == Guid.Empty || doctorId == Guid.Empty)
+            {
+                throw new BadRequestException(
+                    "Appointment ID and doctor ID are required.");
+            }
+
+            var appointment =
+                await _appointmentRepository.GetAppointmentForUpdateAsync(
+                    appointmentId,
+                    cancellationToken);
+
+            if (appointment is null)
+            {
+                throw new NotFoundException("Appointment not found.");
+            }
+
+            if (appointment.DoctorId != doctorId)
+            {
+                throw new ForbiddenException(
+                    "You are not authorized to access this appointment.");
+            }
+
+            return _mapper.Map<AppointmentResponseDto>(appointment);
+        }
+
+
     }
 }

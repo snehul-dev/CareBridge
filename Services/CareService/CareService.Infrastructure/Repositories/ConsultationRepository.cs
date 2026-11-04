@@ -15,44 +15,67 @@ namespace CareService.Infrastructure.Repositories
         {
             _context = context;
         }
-        public  async Task AddAsync(Consultation consultation)
+        public  async Task AddAsync(Consultation consultation , CancellationToken cancellationToken)
         {
-            await _context.Consultations.AddAsync(consultation);
+            await _context.Consultations.AddAsync(consultation , cancellationToken);
         }
 
-        public async Task<Consultation?> GetByAppointmentIdAsync(Guid appointmentId)
+        public async Task<Consultation?> GetByAppointmentIdAsync(Guid appointmentId, 
+            CancellationToken cancellationToken)
         {
            return await _context.Consultations
-                .FirstOrDefaultAsync(c => c.AppointmentId == appointmentId);
+                .FirstOrDefaultAsync(c => c.AppointmentId == appointmentId , cancellationToken);
         }
 
-        public async Task<IEnumerable<Consultation>> GetByDoctorIdAsync(Guid doctorId)
+        public async Task<IEnumerable<Consultation>> GetByDoctorIdAsync(Guid doctorId, 
+            CancellationToken cancellationToken)
         {
             return await _context.Consultations
+                .AsNoTracking()
                 .Where(c => c.DoctorId == doctorId)
-                .ToListAsync();
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<Consultation?> GetByIdAsync(Guid id)
-        {
-            return await _context.Consultations.FindAsync(id);
-        }
-
-        public async Task<IEnumerable<Consultation>> GetByPatientIdAsync(Guid patientId)
+        public async Task<Consultation?> GetByIdAsync(
+            Guid id,
+            CancellationToken cancellationToken)
         {
             return await _context.Consultations
-                .Where(c => c.PatientId == patientId)
-                .ToListAsync();
+                .FindAsync(new object[] { id }, cancellationToken);
         }
 
-        public async Task SaveChangesAsync()
+        public async Task<IEnumerable<Consultation>> GetByPatientAndDoctorAsync(Guid patientId, 
+            Guid doctorId, CancellationToken cancellationToken)
         {
-            await _context.SaveChangesAsync();
+            return await _context.Consultations
+                .AsNoTracking()
+                .Where(c => c.PatientId == patientId && 
+                c.DoctorId == doctorId)
+                   .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<IEnumerable<Consultation>> GetByPatientIdAsync(Guid patientId  ,
+            CancellationToken cancellationToken)
+        {
+            return await _context.Consultations
+                .AsNoTracking()
+                .Where(c => c.PatientId == patientId)
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task SaveChangesAsync(CancellationToken cancellationToken)
+        {
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         public void Update(Consultation consultation)
         {
-             _context.Consultations.Update(consultation);
+             _context.Consultations.Update(consultation );
         }
+
+        
     }
 }

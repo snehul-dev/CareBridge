@@ -109,20 +109,35 @@ namespace AppointmentService.Api.Controllers
             return Ok(response);
         }
 
-        [HttpGet("{id}")]
-        [Authorize(Roles = "Patient")]
-        public async Task<ActionResult<ApiResponse<AppointmentResponseDto>>> GetAppointmentById(Guid id , CancellationToken cancellationToken)
+        [HttpGet("{id:guid}")]
+        [Authorize(Roles = "Doctor,Patient")]
+        public async Task<ActionResult<ApiResponse<AppointmentResponseDto>>>
+           GetAppointmentById(
+               Guid id,
+               CancellationToken cancellationToken)
         {
-            var patientId = GetUserId();
-            var appointment = await _appointmentService.GetAppointmentById(id, patientId, cancellationToken);
+            var userId = GetUserId();
 
-            var response = ApiResponse<AppointmentResponseDto>
-                .Success(
+            AppointmentResponseDto appointment;
+
+            if (User.IsInRole("Doctor"))
+            {
+                appointment = await _appointmentService
+                    .GetAppointmentForDoctorAsync(
+                        id, userId, cancellationToken);
+            }
+            else
+            {
+                appointment = await _appointmentService
+                    .GetAppointmentById(
+                        id, userId, cancellationToken);
+            }
+
+            var response = ApiResponse<AppointmentResponseDto>.Success(
                 appointment,
-                "Your appointment retrieved successfully.",
-                HttpStatusCode.OK
-                );
-            
+                "Appointment retrieved successfully.",
+                HttpStatusCode.OK);
+
             return Ok(response);
         }
 

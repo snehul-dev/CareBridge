@@ -4,7 +4,13 @@ using System.Text;
 
 namespace CareBridge.Contracts.Appointments
 {
-    internal class AppointmentStatusNames
+    public class AppointmentStatusNames
     {
+        public const string Pending = "Pending";
+        public const string Confirmed = "Confirmed";
+        public const string Cancelled = "Cancelled";
+        public const string Completed = "Completed";
+        public const string Rescheduled = "Rescheduled";
+        public const string Rejected = "Rejected";
     }
 }

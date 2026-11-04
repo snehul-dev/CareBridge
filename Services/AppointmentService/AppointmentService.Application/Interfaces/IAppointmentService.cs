@@ -37,6 +37,11 @@ namespace AppointmentService.Application.Interfaces
         Task<AppointmentResponseDto> GetAppointmentById(Guid id, Guid patientId, 
             CancellationToken cancellationToken);
 
+        Task<AppointmentResponseDto> GetAppointmentForDoctorAsync(
+            Guid appointmentId,
+            Guid doctorId,
+            CancellationToken cancellationToken);
+
         Task<AppointmentResponseDto> RejectAppointmentAsync(Guid appointmentId,
             Guid doctorId,
             CancellationToken cancellationToken);

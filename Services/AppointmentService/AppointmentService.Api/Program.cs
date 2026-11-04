@@ -1,3 +1,4 @@
+
 using CareBridge.Shared.Middlewares;
 using System.Security.Claims;
 using System.Text;
@@ -13,7 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Swagger configuration with JWT Bearer authentication
+// Swagger JWT configuration
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -26,7 +27,6 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Enter your JWT access token."
     });
 
-    // Adds the Authorize button to Swagger UI
     options.AddSecurityRequirement(document =>
         new OpenApiSecurityRequirement
         {
@@ -35,10 +35,10 @@ builder.Services.AddSwaggerGen(options =>
         });
 });
 
-// Register AppointmentService infrastructure
+// Infrastructure
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// Register HttpClient for UserService
+// UserService HttpClient
 builder.Services.AddHttpClient("UserService", client =>
 {
     var baseUrl = builder.Configuration[
@@ -53,32 +53,34 @@ builder.Services.AddHttpClient("UserService", client =>
     client.BaseAddress = new Uri(baseUrl);
 });
 
-// Configure JWT authentication
+// JWT Authentication
 builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultAuthenticateScheme =
-            JwtBearerDefaults.AuthenticationScheme;
+{
+    options.DefaultAuthenticateScheme =
+        JwtBearerDefaults.AuthenticationScheme;
 
-        options.DefaultChallengeScheme =
-            JwtBearerDefaults.AuthenticationScheme;
-    })
-    .AddJwtBearer(options =>
-    {
-        var jwtSecret = builder.Configuration["Jwt:Secret"]
-            ?? throw new InvalidOperationException(
-                "JWT Secret is missing from configuration.");
+    options.DefaultChallengeScheme =
+        JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    var jwtSecret = builder.Configuration["Jwt:Secret"]
+        ?? throw new InvalidOperationException(
+            "JWT Secret is missing from configuration.");
 
-        var issuer = builder.Configuration["Jwt:Issuer"]
-            ?? throw new InvalidOperationException(
-                "JWT Issuer is missing from configuration.");
+    var issuer = builder.Configuration["Jwt:Issuer"]
+        ?? throw new InvalidOperationException(
+            "JWT Issuer is missing from configuration.");
 
-        var audience = builder.Configuration["Jwt:Audience"]
-            ?? throw new InvalidOperationException(
-                "JWT Audience is missing from configuration.");
+    var audience = builder.Configuration["Jwt:Audience"]
+        ?? throw new InvalidOperationException(
+            "JWT Audience is missing from configuration.");
 
-        options.TokenValidationParameters = new TokenValidationParameters
+    options.TokenValidationParameters =
+        new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
+
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(jwtSecret)),
 
@@ -93,18 +95,40 @@ builder.Services.AddAuthentication(options =>
 
             RoleClaimType = ClaimTypes.Role
         };
-    });
+
+    // JWT diagnostic events
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            Console.WriteLine(
+                $"JWT Authentication Failed: {context.Exception.Message}");
+
+            return Task.CompletedTask;
+        },
+
+        OnChallenge = context =>
+        {
+            Console.WriteLine(
+                $"JWT Challenge: {context.Error} - {context.ErrorDescription}");
+
+            return Task.CompletedTask;
+        }
+    };
+});
 
 builder.Services.AddAuthorization();
+
+// AutoMapper
 builder.Services.AddAutoMapper(
     cfg => { },
     typeof(AppointmentMapping).Assembly);
 
 var app = builder.Build();
 
+// Global exception middleware
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
-// Configure Swagger UI
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

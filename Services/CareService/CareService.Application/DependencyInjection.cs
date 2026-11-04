@@ -4,6 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using FluentValidation;
 using System.Text;
+using CareService.Application.Mappings;
+using CareService.Application.Interfaces;
+using CareService.Application.Services;
 
 namespace CareService.Application
 {
@@ -15,7 +18,14 @@ namespace CareService.Application
         {
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
+            services.AddScoped<IConsultationService, ConsultationService>();
+
+            services.AddAutoMapper(
+            cfg => { },
+             typeof(CareMappingProfile).Assembly);
             return services;
+
+            
         }
     }
 }

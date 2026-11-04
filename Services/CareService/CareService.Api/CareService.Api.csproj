@@ -17,6 +17,7 @@
 	  <PackageReference Include="Swashbuckle.AspNetCore" /></ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\Shared\CareBridge.Shared\CareBridge.Shared.csproj" />
     <ProjectReference Include="..\CareService.Application\CareService.Application.csproj" />
     <ProjectReference Include="..\CareService.Infrastructure\CareService.Infrastructure.csproj" />
   </ItemGroup>
