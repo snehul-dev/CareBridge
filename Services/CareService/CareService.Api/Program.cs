@@ -1,5 +1,6 @@
 
 using Microsoft.OpenApi;
+using CareBridge.Shared.Middlewares;
 using CareService.Infrastructure;
 using CareService.Application;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -94,6 +95,9 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
 
 var app = builder.Build();
+
+// Global exception middleware
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 // Middleware
 if (app.Environment.IsDevelopment())
