@@ -25,9 +25,9 @@ namespace CareService.Infrastructure
                 options.UseNpgsql(connectionString));
 
             // Repositories
-            services.AddScoped<
-                IConsultationRepository,
-                ConsultationRepository>();
+            services.AddScoped<IConsultationRepository,ConsultationRepository>();
+            services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
+            services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
 
             // HTTP Context Accessor
             services.AddHttpContextAccessor();

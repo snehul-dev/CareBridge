@@ -19,6 +19,8 @@ namespace CareService.Application
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
             services.AddScoped<IConsultationService, ConsultationService>();
+            services.AddScoped<IMedicalRecordService, MedicalRecordService>();
+            services.AddScoped<IPrescriptionService, PrescriptionService>();
 
             services.AddAutoMapper(
             cfg => { },

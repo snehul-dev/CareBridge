@@ -20,6 +20,6 @@ namespace CareService.Domain.Entities
 
         public LabOrder LabOrder { get; set; } = null!;
 
-        public ICollection<LabResult> LabResults { get; set; } = null!;
+        public ICollection<LabResult> LabResults { get; set; } = new List<LabResult>();
     }
 }

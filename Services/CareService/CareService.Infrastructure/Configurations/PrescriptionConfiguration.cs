@@ -46,7 +46,15 @@ namespace CareService.Infrastructure.Configurations
 
             builder.HasIndex(p => p.DoctorId);
 
-            builder.HasIndex(p => p.ConsultationId);
+            builder.HasIndex(p => p.ConsultationId)
+                .IsUnique();
+
+            //one consultation one prescription
+
+            builder.HasOne(p => p.Consultation)
+                .WithOne(c => c.Prescription)
+                .HasForeignKey<Prescription>(p => p.ConsultationId)
+                .OnDelete(DeleteBehavior.Restrict);
 
         }
     }
