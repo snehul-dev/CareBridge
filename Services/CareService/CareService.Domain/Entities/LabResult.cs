@@ -9,7 +9,6 @@ namespace CareService.Domain.Entities
         public Guid Id { get; set; }
 
         public Guid LabOrderItemId { get; set; }
-        public Guid LabOrderId { get; set; }
 
         public string ResultValue { get; set; } = string.Empty;
         public string? Unit { get; set; }

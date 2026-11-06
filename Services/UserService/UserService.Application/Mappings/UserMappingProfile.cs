@@ -2,6 +2,7 @@
 using AutoMapper;
 using UserService.Application.DTOs.Auth;
 using UserService.Application.DTOs.Doctors;
+using UserService.Application.DTOs.Labs;
 using UserService.Application.DTOs.Users;
 using UserService.Domain.Entities;
 using UserService.Domain.Enums;
@@ -86,6 +87,10 @@ namespace UserService.Application.Mappings
                 opt => opt.MapFrom(src => src.User.ProfileImageUrl))
                 .ForMember(dest => dest.SpecializationName,
                 opt => opt.MapFrom(src => src.Specialization.Name));
+
+            //LabProfile to LabResponseDto
+
+            CreateMap<LabProfile, LabResponseDto>();
         }
     }
 }

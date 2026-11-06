@@ -28,6 +28,7 @@ namespace CareService.Infrastructure
             services.AddScoped<IConsultationRepository,ConsultationRepository>();
             services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
             services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
+            services.AddScoped<ILabOrderRepository, LabOrderRepository>();
 
             // HTTP Context Accessor
             services.AddHttpContextAccessor();

@@ -19,8 +19,7 @@ namespace CareService.Infrastructure.Configurations
             builder.Property(x => x.LabOrderItemId)
                 .IsRequired();
 
-            builder.Property(x => x.LabOrderId)
-                .IsRequired();
+          
 
            
             builder.Property(x => x.ResultValue)
@@ -55,8 +54,6 @@ namespace CareService.Infrastructure.Configurations
 
         
             builder.HasIndex(x => x.LabOrderItemId);
-
-            builder.HasIndex(x => x.LabOrderId);
 
 
             builder.HasOne(x => x.LabOrderItem)

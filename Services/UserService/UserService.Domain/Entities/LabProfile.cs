@@ -17,6 +17,7 @@ namespace UserService.Domain.Entities
         public string State { get; set; } = string.Empty;
         public string? Bio { get; set; }
         public bool IsVerified { get; set; }
+        public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public User User { get; set; } = null!;

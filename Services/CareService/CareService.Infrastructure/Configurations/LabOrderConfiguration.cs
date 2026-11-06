@@ -58,6 +58,8 @@ namespace CareService.Infrastructure.Configurations
             builder.HasIndex(l => l.AssignedLabId);
 
             builder.HasIndex(l => l.LabOrderStatus);
+
+            
         }
     }
 }

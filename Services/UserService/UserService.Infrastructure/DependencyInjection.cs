@@ -32,6 +32,7 @@ namespace UserService.Infrastructure
             service.AddScoped<IUserRepository, UserRepository>();
             service.AddScoped<IDoctorRepository, DoctorRepository>();
             service.AddScoped<IDoctorService, DoctorService>();
+            service.AddScoped<ILabRepository, LabRepository>();
 
 
             //services

@@ -178,6 +178,9 @@ namespace UserService.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsVerified")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")

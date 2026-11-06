@@ -7,10 +7,13 @@ namespace CareService.Domain.Enums
     public enum LabOrderStatus
     {
 
-        Pending = 1,
-        Assigned = 2,
-        InProgress = 3,
-        Completed = 4,
-        Cancelled = 5
+        AwaitingLabSelection = 1,
+        PendingAcceptance = 2,
+        Accepted = 3,
+        Rejected = 4,
+        SampleCollected = 5,
+        InProgress = 6,
+        Completed = 7,
+        Cancelled = 8
     }
 }
