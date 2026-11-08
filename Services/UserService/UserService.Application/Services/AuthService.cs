@@ -419,10 +419,19 @@ public class AuthService : IAuthService
                 "Your lab account is awaiting verification.");
         }
 
+        Guid? labId = null;
+
+        if (role == "Lab")
+        {
+            labId = user.LabProfile!.Id;
+        }
+
+
         var (accessToken, expiresAt) = _jwtService.GenerateAccessToken(
                             user.Id,
                            user.Email,
-                           role);
+                           role,
+                           labId);
 
         var rawRefreshToken = RefreshTokenHelper.Generate();
         var now = DateTime.UtcNow;
@@ -454,7 +463,8 @@ public class AuthService : IAuthService
 
 
     public async Task<LoginResponse> RefreshAsync(
-        RefreshTokenRequest request , CancellationToken cancellationToken)
+        RefreshTokenRequest request,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -464,30 +474,38 @@ public class AuthService : IAuthService
                 "Refresh token is required.");
         }
 
-        var tokenHash = RefreshTokenHelper.Hash(request.RefreshToken);
+        var tokenHash = RefreshTokenHelper.Hash(
+            request.RefreshToken);
 
-        var storedToken = await _refreshTokenRepository.GetByHashAsync(tokenHash , cancellationToken);
+        var storedToken = await _refreshTokenRepository.GetByHashAsync(
+            tokenHash,
+            cancellationToken);
 
         if (storedToken is null ||
             storedToken.RevokedAt.HasValue ||
             storedToken.ExpiresAt <= DateTime.UtcNow)
         {
-            throw new UnauthorizedException("Invalid, expired, or revoked refresh token.");
+            throw new UnauthorizedException(
+                "Invalid, expired, or revoked refresh token.");
         }
 
-        var user = await _userRepository.GetByIdAsync(storedToken.UserId , cancellationToken);
+        var user = await _userRepository.GetByIdAsync(
+            storedToken.UserId,
+            cancellationToken);
 
         if (user is null || !user.IsActive)
         {
-            throw new UnauthorizedException("User is inactive or does not exist.");
+            throw new UnauthorizedException(
+                "User is inactive or does not exist.");
         }
 
-      
         var role = storedToken.Role;
 
         var hasRole = user.UserRoles.Any(ur =>
             ur.Role != null &&
-            ur.Role.Name.Equals(role,StringComparison.OrdinalIgnoreCase));
+            ur.Role.Name.Equals(
+                role,
+                StringComparison.OrdinalIgnoreCase));
 
         if (!hasRole)
         {
@@ -495,8 +513,9 @@ public class AuthService : IAuthService
                 "This role is no longer assigned to the user.");
         }
 
- 
-        if (role.Equals("Doctor",
+        // Doctor verification check.
+        if (role.Equals(
+                "Doctor",
                 StringComparison.OrdinalIgnoreCase) &&
             (user.DoctorProfile is null ||
              !user.DoctorProfile.IsVerified))
@@ -505,7 +524,9 @@ public class AuthService : IAuthService
                 "Doctor account is not verified.");
         }
 
-        if (role.Equals("Lab",
+        // Lab verification check.
+        if (role.Equals(
+                "Lab",
                 StringComparison.OrdinalIgnoreCase) &&
             (user.LabProfile is null ||
              !user.LabProfile.IsVerified))
@@ -514,13 +535,24 @@ public class AuthService : IAuthService
                 "Lab account is not verified.");
         }
 
+        // Get Lab Profile ID when refreshing a Lab user's token.
+        Guid? labId = null;
+
+        if (role.Equals(
+                "Lab",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            labId = user.LabProfile!.Id;
+        }
+
         var now = DateTime.UtcNow;
 
         var (accessToken, accessTokenExpiresAt) =
             _jwtService.GenerateAccessToken(
                 user.Id,
                 user.Email,
-                role);
+                role,
+                labId);
 
         var newRawRefreshToken = RefreshTokenHelper.Generate();
 
@@ -538,8 +570,12 @@ public class AuthService : IAuthService
             RevokedAt = null
         };
 
-        await _refreshTokenRepository.AddAsync(newRefreshToken , cancellationToken);
-        await _refreshTokenRepository.SaveChangesAsync(cancellationToken);
+        await _refreshTokenRepository.AddAsync(
+            newRefreshToken,
+            cancellationToken);
+
+        await _refreshTokenRepository.SaveChangesAsync(
+            cancellationToken);
 
         return new LoginResponse
         {

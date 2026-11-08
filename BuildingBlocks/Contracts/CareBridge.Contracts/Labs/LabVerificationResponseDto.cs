@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace UserService.Application.DTOs.Labs
+namespace CareBridge.Contracts.Labs
 {
     public class LabVerificationResponseDto
     {

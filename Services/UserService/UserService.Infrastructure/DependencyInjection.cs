@@ -33,6 +33,7 @@ namespace UserService.Infrastructure
             service.AddScoped<IDoctorRepository, DoctorRepository>();
             service.AddScoped<IDoctorService, DoctorService>();
             service.AddScoped<ILabRepository, LabRepository>();
+            service.AddScoped<IAdminRepository, AdminRepository>();
 
 
             //services

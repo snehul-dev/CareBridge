@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using UserService.Domain.Enums;
 
 namespace UserService.Domain.Entities
 {
@@ -17,10 +18,17 @@ namespace UserService.Domain.Entities
         public string Address { get; set; } = string.Empty;
         public string? City { get; set; }
         public string? District { get; set; }
-        public string? Bio { get; set; } 
+        public string? Bio { get; set; }
+        public VerificationStatus VerificationStatus { get; set; } = VerificationStatus.Pending;
+        public string? RejectionReason { get; set; }
+        public DateTime? VerifiedAt { get; set; }
+        public Guid? VerifiedBy { get; set; }
         public bool IsVerified { get; set; }
+        public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+
+     
 
         public User User { get; set; } = null!;
         public Specialization Specialization { get; set; } = null!;

@@ -172,9 +172,6 @@ namespace CareService.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<Guid>("LabOrderId")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("LabOrderItemId")
                         .HasColumnType("uuid");
 
@@ -206,8 +203,6 @@ namespace CareService.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("LabOrderId");
 
                     b.HasIndex("LabOrderItemId");
 

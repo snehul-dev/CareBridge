@@ -1,5 +1,6 @@
 ﻿
 using CareService.Application.Interfaces;
+using CareService.Application.Interfaces.Services;
 using CareService.Infrastructure.ExternalServices;
 using CareService.Infrastructure.Persistence;
 using CareService.Infrastructure.Repositories;
@@ -29,6 +30,7 @@ namespace CareService.Infrastructure
             services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
             services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
             services.AddScoped<ILabOrderRepository, LabOrderRepository>();
+            services.AddScoped<IAdminRepository, AdminRepository>();
 
             // HTTP Context Accessor
             services.AddHttpContextAccessor();
@@ -49,6 +51,21 @@ namespace CareService.Infrastructure
                 {
                     client.BaseAddress =
                         new Uri(appointmentServiceBaseUrl);
+                })
+                .AddHttpMessageHandler<AuthorizationHeaderHandler>();
+
+            // User Service HTTP Client
+            var userServiceBaseUrl =
+                configuration["Services:UserService:BaseUrl"]
+                ?? throw new InvalidOperationException(
+                    "UserService BaseUrl is missing.");
+
+            services.AddHttpClient<
+                ILabDirectoryClient,
+                LabDirectoryClient>(
+                client =>
+                {
+                    client.BaseAddress = new Uri(userServiceBaseUrl);
                 })
                 .AddHttpMessageHandler<AuthorizationHeaderHandler>();
 

@@ -17,9 +17,12 @@ namespace UserService.Domain.Entities
         public Gender? Gender {  get; set; }
         public DateTime? DateOfBirth { get; set; }
         public string? ProfileImageUrl { get; set; }
-        public bool IsActive { get; set; }
+        public bool IsActive { get; set; } = true;
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        public string? BlockReason { get; set; }
+        public DateTime? BlockedAt { get; set; }
+        public Guid? BlockedBy { get; set; }
 
         public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
         public PatientProfile? PatientProfile { get; set; } 

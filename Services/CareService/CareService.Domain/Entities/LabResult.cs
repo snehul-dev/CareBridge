@@ -22,7 +22,7 @@ namespace CareService.Domain.Entities
 
         public DateTimeOffset ResultDate { get; set; }
             = DateTimeOffset.UtcNow;
-
+       
         public DateTimeOffset CreatedAt { get; set; }
             = DateTimeOffset.UtcNow;
 

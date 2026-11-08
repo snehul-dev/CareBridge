@@ -18,7 +18,7 @@ namespace UserService.Infrastructure.Security
         {
             _configuration = configuration;
         }
-        public (string Token, DateTime ExpiresAt) GenerateAccessToken(Guid userId, string email, string role)
+        public (string Token, DateTime ExpiresAt) GenerateAccessToken(Guid userId, string email, string role, Guid? labId = null)
         {
             var jwtSettings = _configuration.GetSection("Jwt");
 
@@ -71,6 +71,17 @@ namespace UserService.Infrastructure.Security
                     JwtRegisteredClaimNames.Jti,
                     Guid.NewGuid().ToString())
             };
+
+            if (role.Equals("Lab", StringComparison.OrdinalIgnoreCase))
+            {
+                if (labId == null || labId == Guid.Empty)
+                {
+                    throw new InvalidOperationException(
+                        "Lab profile ID is required for Lab users.");
+                }
+
+                claims.Add(new Claim("lab_id", labId.Value.ToString()));
+            }
 
             var securityKey = new SymmetricSecurityKey(keyBytes);
 

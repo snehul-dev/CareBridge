@@ -10,6 +10,7 @@ namespace UserService.Application.Interfaces
         (string Token, DateTime ExpiresAt) GenerateAccessToken(
            Guid userId,
            string email,
-           string role);
+           string role,
+           Guid? labId = null);
     }
 }

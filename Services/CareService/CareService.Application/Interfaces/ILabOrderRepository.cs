@@ -35,6 +35,10 @@ namespace CareService.Application.Interfaces
             LabOrder labOrder,
             CancellationToken cancellationToken);
 
+        Task AddLabResultAsync(
+            LabResult labResult,
+            CancellationToken cancellationToken);
+
         Task UpdateAsync(
             LabOrder labOrder,
             CancellationToken cancellationToken);

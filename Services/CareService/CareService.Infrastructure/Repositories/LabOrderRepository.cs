@@ -100,10 +100,50 @@ namespace CareService.Infrastructure.Repositories
             return Task.CompletedTask;
         }
 
-        public async Task SaveChangesAsync(
-            CancellationToken cancellationToken)
+        public async Task AddLabResultAsync(
+                 LabResult labResult,
+                CancellationToken cancellationToken)
         {
-            await _context.SaveChangesAsync(cancellationToken);
+            await _context.LabResults.AddAsync(
+                labResult,
+                cancellationToken);
+        }
+
+        public async Task SaveChangesAsync(
+        CancellationToken cancellationToken)
+        {
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                foreach (var entry in ex.Entries)
+                {
+                    var primaryKey = entry.Metadata.FindPrimaryKey();
+
+                    var keyValues = primaryKey?.Properties
+                        .Select(p =>
+                            $"{p.Name}: {entry.Property(p.Name).CurrentValue}");
+
+                    Console.WriteLine(
+                        $"Entity: {entry.Metadata.ClrType.Name}");
+
+                    Console.WriteLine(
+                        $"State: {entry.State}");
+
+                    Console.WriteLine(
+                        $"Primary Key: {string.Join(", ", keyValues ?? [])}");
+
+                    var databaseValues =
+                        await entry.GetDatabaseValuesAsync(cancellationToken);
+
+                    Console.WriteLine(
+                        $"Exists in database: {databaseValues != null}");
+                }
+
+                throw;
+            }
         }
     }
 }

@@ -22,6 +22,7 @@ namespace UserService.Application
             services.AddValidatorsFromAssemblyContaining<RegisterLabValidator>();
 
             services.AddScoped<ILabService, LabService>();
+            services.AddScoped<IAdminService, AdminService>();
             
 
             services.AddAutoMapper(

@@ -21,6 +21,9 @@ namespace CareService.Application
             services.AddScoped<IConsultationService, ConsultationService>();
             services.AddScoped<IMedicalRecordService, MedicalRecordService>();
             services.AddScoped<IPrescriptionService, PrescriptionService>();
+            services.AddScoped<ILabOrderService, LabOrderService>();
+            services.AddScoped<IAdminService, AdminService>();
+            
 
             services.AddAutoMapper(
             cfg => { },

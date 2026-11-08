@@ -17,3 +17,4 @@ namespace CareService.Domain.Enums
         Cancelled = 8
     }
 }
+

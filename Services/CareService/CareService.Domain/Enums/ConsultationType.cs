@@ -10,3 +10,4 @@ namespace CareService.Domain.Enums
         Offline = 2
     }
 }
+

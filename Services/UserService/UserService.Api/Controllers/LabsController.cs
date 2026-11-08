@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using UserService.Application.DTOs.Labs;
 using UserService.Application.Interfaces;
+using CareBridge.Contracts.Labs;
 
 namespace UserService.Api.Controllers
 {

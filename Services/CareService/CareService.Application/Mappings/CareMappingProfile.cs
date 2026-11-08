@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using CareService.Application.DTOs.Consultations;
+using CareService.Application.DTOs.LabOrders;
 using CareService.Application.DTOs.MedicalRecords;
 using CareService.Application.DTOs.Prescriptions;
 using CareService.Domain.Entities;
@@ -53,6 +54,38 @@ namespace CareService.Application.Mappings
             CreateMap<Prescription, PrescriptionResponseDto>();
 
             CreateMap<PrescriptionItem, PrescriptionItemResponseDto>();
+
+            // laborder to laborderResponsedto 
+
+            // Request DTO -> Entity
+            CreateMap<CreateLabOrderRequestDto, LabOrder>()
+                .ForMember(d => d.Id, o => o.Ignore())
+                .ForMember(d => d.ConsultationId, o => o.Ignore())
+                .ForMember(d => d.DoctorId, o => o.Ignore())
+                .ForMember(d => d.PatientId, o => o.Ignore())
+                .ForMember(d => d.AssignedLabId, o => o.Ignore())
+                .ForMember(d => d.LabOrderStatus, o => o.Ignore())
+                .ForMember(d => d.OrderedAt, o => o.Ignore())
+                .ForMember(d => d.AssignedAt, o => o.Ignore())
+                .ForMember(d => d.CompletedAt, o => o.Ignore())
+                .ForMember(d => d.UpdatedAt, o => o.Ignore())
+                .ForMember(d => d.Consultation, o => o.Ignore());
+
+            // Lab Order Item Request DTO -> Entity
+            CreateMap<LabOrderItemRequestDto, LabOrderItem>()
+                .ForMember(d => d.Id, o => o.Ignore())
+                .ForMember(d => d.LabOrderId, o => o.Ignore())
+                .ForMember(d => d.CreatedAt, o => o.Ignore());
+
+            // Entity -> Response DTO
+            CreateMap<LabOrder, LabOrderResponseDto>()
+                .ForMember(d => d.LabOrderStatus,
+                    o => o.MapFrom(s => s.LabOrderStatus.ToString()));
+
+            CreateMap<LabOrderItem, LabOrderItemResponseDto>();
+
+            CreateMap<LabResult, LabResultResponseDto>()
+                .ForMember(d => d.TestName, o => o.Ignore());
 
         }
     } 
