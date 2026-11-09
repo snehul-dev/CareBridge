@@ -34,6 +34,25 @@ services:
       timeout: 5s
       retries: 5
 
+      
+  # CARE SERVICE DATABASE
+  care-postgres:
+    image: postgres:17
+    container_name: carebridge-care-postgres
+    environment:
+      POSTGRES_DB: ${CARE_POSTGRES_DB}
+      POSTGRES_USER: ${CARE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${CARE_POSTGRES_PASSWORD}
+    ports:
+      - "5435:5432"
+    volumes:
+      - care_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   userservice:
     build:
       context: .
@@ -50,6 +69,9 @@ services:
       AdminSeed__Email: ${ADMIN_SEED_EMAIL}
       AdminSeed__Password: ${ADMIN_SEED_PASSWORD}
       AdminSeed__PhoneNumber: ${ADMIN_SEED_PHONE}
+      ServiceJwt__Issuer: ${SERVICE_JWT_ISSUER}
+      ServiceJwt__Audience: ${SERVICE_JWT_AUDIENCE}
+      ServiceJwt__SecretKey: ${SERVICE_JWT_SECRET}
     ports:
       - "8080:8080"
     depends_on:
@@ -72,12 +94,49 @@ services:
       Jwt__Audience: ${JWT_AUDIENCE}
       Jwt__AccessTokenMinutes: ${JWT_ACCESS_TOKEN_MINUTES}
 
+      
+
     ports:
       - "8081:8080"
     depends_on:
       appointment-postgres:
         condition: service_healthy
 
+# CARE SERVICE
+  careservice:
+    build:
+      context: .
+      dockerfile: Services/CareService/CareService.Api/Dockerfile
+    container_name: carebridge-careservice
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: "8080"
+
+      ConnectionStrings__DefaultConnection: "Host=care-postgres;Port=5432;Database=${CARE_POSTGRES_DB};Username=${CARE_POSTGRES_USER};Password=${CARE_POSTGRES_PASSWORD}"
+
+      Services__UserService__BaseUrl: "http://userservice:8080/"
+      Services__AppointmentService__BaseUrl: "http://appointmentservice:8080/"
+
+      Jwt__Secret: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+      Jwt__AccessTokenMinutes: ${JWT_ACCESS_TOKEN_MINUTES}
+
+      ServiceJwt__Issuer: ${SERVICE_JWT_ISSUER}
+      ServiceJwt__Audience: ${SERVICE_JWT_AUDIENCE}
+      ServiceJwt__SecretKey: ${SERVICE_JWT_SECRET}
+
+    ports:
+      - "8082:8080"
+    depends_on:
+      care-postgres:
+        condition: service_healthy
+      userservice:
+        condition: service_started
+      appointmentservice:
+        condition: service_started
+
 volumes:
   postgres_data:
   appointment_postgres_data:
+  care_postgres_data:

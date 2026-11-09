@@ -13,6 +13,10 @@ namespace UserService.Application.Interfaces
         Task AddPatientProfileAsync(PatientProfile patientProfile , CancellationToken cancellationToken);
         Task AddAsync(User user, CancellationToken cancellationToken);
         Task<User?> GetMyProfileAsync(Guid userId , CancellationToken cancellationToken);
+        Task<User?> GetPrescriptionProfileByIdAsync(
+            Guid id,
+            CancellationToken cancellationToken);
         Task SaveChangesAsync(CancellationToken cancellationToken);
+
     }
 }

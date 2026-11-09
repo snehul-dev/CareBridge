@@ -163,6 +163,16 @@ builder.Services
 // Authorization
 builder.Services.AddAuthorization();
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("CareServiceOnly", policy =>
+    {
+        policy.RequireAuthenticatedUser();
+
+        policy.RequireClaim("client_id", "CareService");
+    });
+});
+
 var app = builder.Build();
 
 // Seed admin user

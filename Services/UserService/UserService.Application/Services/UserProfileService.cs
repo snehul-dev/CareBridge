@@ -1,7 +1,9 @@
 ﻿
+using CareBridge.Contracts.Users;
 using UserService.Application.DTOs.Users;
 using CareBridge.Shared.Exceptions;
 using UserService.Application.Interfaces;
+using UserService.Domain.Entities;
 
 namespace UserService.Application.Services
 {
@@ -82,6 +84,119 @@ namespace UserService.Application.Services
                         Bio = user.LabProfile.Bio,
                         IsVerified = user.LabProfile.IsVerified
                     }
+            };
+        }
+
+
+        
+
+        public async Task<PrescriptionProfileResponseDto>GetInternalPrescriptionProfileAsync(
+        Guid doctorUserId,
+        Guid patientUserId,
+        CancellationToken cancellationToken)
+        {
+            var doctor = await _userRepository
+                .GetPrescriptionProfileByIdAsync(
+                    doctorUserId,
+                    cancellationToken);
+
+            if (doctor is null || doctor.DoctorProfile is null)
+                throw new NotFoundException("Doctor profile not found.");
+
+            var patient = await _userRepository
+                .GetPrescriptionProfileByIdAsync(
+                    patientUserId,
+                    cancellationToken);
+
+            if (patient is null || patient.PatientProfile is null)
+                throw new NotFoundException("Patient profile not found.");
+
+            return new PrescriptionProfileResponseDto
+            {
+                Doctor = new DoctorPrescriptionProfileDto
+                {
+                    UserId = doctor.Id,
+                    FirstName = doctor.FirstName,
+                    LastName = doctor.LastName,
+                    Qualification = doctor.DoctorProfile.Qualification,
+                    HospitalOrClinicName =
+                        doctor.DoctorProfile.HospitalOrClinicName,
+                    DoctorAddress = doctor.DoctorProfile.Address,
+                    City = doctor.DoctorProfile.City,
+                    SpecializationName =
+                        doctor.DoctorProfile.Specialization?.Name
+                },
+
+                Patient = new PatientPrescriptionProfileDto
+                {
+                    UserId = patient.Id,
+                    FirstName = patient.FirstName,
+                    LastName = patient.LastName,
+                    Email = patient.Email,
+                    PhoneNumber = patient.PhoneNumber,
+                    DateOfBirth = patient.DateOfBirth,
+                    Gender = patient.Gender?.ToString(),
+                    BloodGroup = patient.PatientProfile.BloodGroup
+                }
+            };
+        }
+
+        public async Task<UserPrescriptionProfileDto> GetPrescriptionProfileForServiceAsync(
+            Guid userId,
+            Guid currentUserId,
+            string role,
+            CancellationToken cancellationToken)
+        {
+            var user = await _userRepository.GetPrescriptionProfileByIdAsync(
+                userId,
+                cancellationToken);
+
+            if (user is null)
+                throw new NotFoundException("User not found.");
+
+            var isSelf = currentUserId == userId;
+            var isDoctorAccessingPatient =
+                role == "Doctor" && user.PatientProfile is not null;
+            var isAdmin = role == "Admin";
+
+            if (!isSelf && !isDoctorAccessingPatient && !isAdmin)
+            {
+                throw new ForbiddenException(
+                    "You are not authorized to access this profile.");
+            }
+
+            return MapPrescriptionProfile(user);
+        }
+
+        private static UserPrescriptionProfileDto MapPrescriptionProfile(
+            User user)
+        {
+            return new UserPrescriptionProfileDto
+            {
+                UserId = user.Id,
+
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+
+                Email = user.Email,
+                PhoneNumber = user.PhoneNumber,
+
+                DateOfBirth = user.DateOfBirth,
+                Gender = user.Gender?.ToString(),
+
+                BloodGroup = user.PatientProfile?.BloodGroup,
+
+                Qualification = user.DoctorProfile?.Qualification,
+
+                HospitalOrClinicName =
+                    user.DoctorProfile?.HospitalOrClinicName,
+
+                DoctorAddress = user.DoctorProfile?.Address,
+
+                City = user.DoctorProfile?.City,
+
+                SpecializationName =
+                    user.DoctorProfile?.Specialization?.Name
             };
         }
 

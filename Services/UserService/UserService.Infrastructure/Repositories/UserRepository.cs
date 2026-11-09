@@ -52,7 +52,22 @@ namespace UserService.Infrastructure.Repositories
                         .Include(u => u.PatientProfile)
                         .Include(u => u.DoctorProfile)
                         .Include(u => u.LabProfile)
+
                         .FirstOrDefaultAsync(u => u.Id == id , cancellationToken);
+        }
+
+        public async Task<User?> GetPrescriptionProfileByIdAsync(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            return await _context.Users
+                .AsNoTracking()
+                .Include(u => u.PatientProfile)
+                .Include(u => u.DoctorProfile) 
+                    .ThenInclude(d => d!.Specialization)
+                .FirstOrDefaultAsync(
+                    u => u.Id == id,
+                    cancellationToken);
         }
 
         public async Task<User?> GetMyProfileAsync(Guid userId , CancellationToken cancellationToken)

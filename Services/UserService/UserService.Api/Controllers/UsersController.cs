@@ -1,8 +1,10 @@
 ﻿
+using CareBridge.Contracts.Users;
 using CareBridge.Shared.Responses;
-using System.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
+using System.Security.Claims;
 using UserService.Application.DTOs.Users;
 using UserService.Application.Interfaces;
 using UserService.Application.Services;
@@ -47,5 +49,8 @@ namespace UserService.Api.Controllers
          
 
         }
+
+
+
     }
 }

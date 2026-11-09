@@ -16,6 +16,7 @@
 	  </PackageReference></ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\Contracts\CareBridge.Contracts\CareBridge.Contracts.csproj" />
     <ProjectReference Include="..\UserService.Application\UserService.Application.csproj" />
     <ProjectReference Include="..\UserService.Infrastructure\UserService.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Shared\CareBridge.Shared\CareBridge.Shared.csproj" />

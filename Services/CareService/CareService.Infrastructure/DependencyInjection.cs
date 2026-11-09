@@ -69,6 +69,15 @@ namespace CareService.Infrastructure
                 })
                 .AddHttpMessageHandler<AuthorizationHeaderHandler>();
 
+            services.AddHttpClient<
+                IUserProfileClient,
+                UserProfileClient>(
+                client =>
+                {
+                    client.BaseAddress = new Uri(userServiceBaseUrl);
+                })
+                .AddHttpMessageHandler<AuthorizationHeaderHandler>();
+
             // Meeting Link Provider
             services.AddScoped<
                 IMeetingLinkProvider,
