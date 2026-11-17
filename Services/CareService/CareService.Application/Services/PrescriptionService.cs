@@ -4,6 +4,7 @@ using CareService.Application.DTOs.Prescriptions;
 using CareService.Application.Interfaces;
 using CareService.Domain.Entities;
 using CareService.Domain.Enums;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -14,14 +15,20 @@ namespace CareService.Application.Services
     {
         private readonly IPrescriptionRepository _prescriptionRepository;
         private readonly IConsultationRepository _consultationRepository;
+        private readonly IPrescriptionPdfService _prescriptionPdfService;
         private readonly IMapper _mapper;
+        private readonly ILogger<PrescriptionService> _logger;
         public PrescriptionService(IPrescriptionRepository prescriptionRepository , 
             IConsultationRepository consultationRepository,
-            IMapper mapper)
+            IPrescriptionPdfService prescriptionPdfService,
+            IMapper mapper,
+            ILogger<PrescriptionService> logger)
         {
             _prescriptionRepository = prescriptionRepository;
             _consultationRepository = consultationRepository;
+            _prescriptionPdfService = prescriptionPdfService;
             _mapper = mapper;
+            _logger = logger;
         }
         public async Task<PrescriptionResponseDto> CreateAsync(CreatePrescriptionRequestDto request,
             Guid doctorId, CancellationToken cancellationToken)
@@ -105,6 +112,25 @@ namespace CareService.Application.Services
                 cancellationToken);
 
             await _prescriptionRepository.SaveChangesAsync(cancellationToken);
+
+            try
+            {
+                await _prescriptionPdfService.GenerateAndStoreAsync(
+                    prescription.Id,
+                    doctorId,
+                    "Doctor",
+                    cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "Prescription {PrescriptionId} was created but PDF generation failed.",
+                    prescription.Id);
+            }
 
             return _mapper.Map<PrescriptionResponseDto>(prescription);
 

@@ -16,7 +16,9 @@ namespace CareService.Application.DTOs.Prescriptions
 
         public string? Notes { get; set; }
 
-        public string? PdfFileUrl { get; set; }
+        public DateTimeOffset? PdfGeneratedAt { get; set; }
+
+        public string? PdfDownloadUrl { get; set; }
 
         public DateTimeOffset CreatedAt { get; set; }
 

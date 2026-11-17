@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using AppointmentService.Application.Mappings;
+using AppointmentService.Application;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +38,7 @@ builder.Services.AddSwaggerGen(options =>
 
 // Infrastructure
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddApplication();
 
 // UserService HttpClient
 builder.Services.AddHttpClient("UserService", client =>

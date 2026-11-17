@@ -39,10 +39,28 @@ namespace CareService.Infrastructure.Configurations
                 .HasMaxLength(2000);
 
             
-            builder.Property(x => x.ReportFileUrl)
-                .HasMaxLength(1000);
+            builder.Property(x => x.PdfStorageKey)
+                .HasMaxLength(500)
+                .IsRequired(false);
 
-            
+            builder.Property(x => x.PdfFileName)
+                .HasMaxLength(255)
+                .IsRequired(false);
+
+            builder.Property(x => x.ContentType)
+                .HasMaxLength(100)
+                .IsRequired(false);
+
+            builder.Property(x => x.FileSize)
+                .IsRequired(false);
+
+            builder.Property(x => x.UploadedBy)
+                .IsRequired(false);
+
+            builder.Property(x => x.UploadedAt)
+                .IsRequired(false);
+
+
             builder.Property(x => x.ResultDate)
                 .IsRequired();
 

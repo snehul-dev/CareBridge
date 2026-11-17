@@ -10,6 +10,7 @@ namespace CareBridge.Contracts.Users
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string? Qualification { get; set; }
+        public string? LicenseNumber { get; set; }
         public string? HospitalOrClinicName { get; set; }
         public string? DoctorAddress { get; set; }
         public string? City { get; set; }

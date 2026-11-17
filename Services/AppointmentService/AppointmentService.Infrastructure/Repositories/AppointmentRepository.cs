@@ -1,5 +1,6 @@
 ﻿using AppointmentService.Application.Interfaces;
 using AppointmentService.Domain.Entities;
+using AppointmentService.Domain.Enums;
 using AppointmentService.Infrastructure.Persistence;
 using CareBridge.Shared.Exceptions;
 using Microsoft.EntityFrameworkCore;
@@ -47,6 +48,33 @@ namespace AppointmentService.Infrastructure.Repositories
                 .Where(x => x.DoctorId == doctorId &&
                        x.AppointmentDate == date)
                 .OrderBy(x => x.StartTime)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<Appointment>> GetActiveByDoctorAndDateRangeAsync(Guid doctorId,
+            DateOnly startDate,
+            DateOnly endDate,
+            CancellationToken cancellationToken)
+        {
+            return await _context.Appointments
+                .Where(x => x.DoctorId == doctorId &&
+                       x.AppointmentDate >= startDate &&
+                       x.AppointmentDate <= endDate &&
+                       (x.Status == AppointmentStatus.Pending ||
+                        x.Status == AppointmentStatus.Confirmed))
+                .OrderBy(x => x.AppointmentDate)
+                .ThenBy(x => x.StartTime)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<Appointment>> GetCancelledByUnavailablePeriodAsync(Guid unavailablePeriodId,
+            CancellationToken cancellationToken)
+        {
+            return await _context.Appointments
+                .Where(x => x.UnavailablePeriodId == unavailablePeriodId &&
+                       x.Status == AppointmentStatus.Cancelled)
+                .OrderBy(x => x.AppointmentDate)
+                .ThenBy(x => x.StartTime)
                 .ToListAsync(cancellationToken);
         }
 

@@ -21,7 +21,5 @@ namespace CareService.Application.DTOs.LabOrders
         public string? Interpretation { get; set; }
 
         public string? Notes { get; set; }
-
-        public string? ReportFileUrl { get; set; }
     }
 }

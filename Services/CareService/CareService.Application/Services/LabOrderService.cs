@@ -327,7 +327,6 @@ namespace CareService.Application.Services
                     ReferenceRange = resultRequest.ReferenceRange,
                     Interpretation = resultRequest.Interpretation,
                     Notes = resultRequest.Notes,
-                    ReportFileUrl = resultRequest.ReportFileUrl,
                     ResultDate = DateTimeOffset.UtcNow,
                     CreatedAt = DateTimeOffset.UtcNow
                 };

@@ -35,7 +35,9 @@ namespace UserService.Application.Services
                 LastName = user.LastName,
                 Gender = user.Gender,
                 DateOfBirth = user.DateOfBirth,
-               
+                ProfileImageUrl = string.IsNullOrWhiteSpace(user.ProfileImageUrl)
+                    ? null
+                    : ProfilePictureUrls.Build(user.Id, user.UpdatedAt),
 
                 PatientProfile = user.PatientProfile is null
                     ? null
@@ -119,6 +121,7 @@ namespace UserService.Application.Services
                     FirstName = doctor.FirstName,
                     LastName = doctor.LastName,
                     Qualification = doctor.DoctorProfile.Qualification,
+                    LicenseNumber = doctor.DoctorProfile.LicenseNumber,
                     HospitalOrClinicName =
                         doctor.DoctorProfile.HospitalOrClinicName,
                     DoctorAddress = doctor.DoctorProfile.Address,

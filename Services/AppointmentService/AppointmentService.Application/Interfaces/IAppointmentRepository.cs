@@ -11,6 +11,14 @@ namespace AppointmentService.Application.Interfaces
             DateOnly date,
             CancellationToken cancellationToken);
 
+        Task<IReadOnlyList<Appointment>> GetActiveByDoctorAndDateRangeAsync(Guid doctorId,
+            DateOnly startDate,
+            DateOnly endDate,
+            CancellationToken cancellationToken);
+
+        Task<IReadOnlyList<Appointment>> GetCancelledByUnavailablePeriodAsync(Guid unavailablePeriodId,
+            CancellationToken cancellationToken);
+
         Task<IReadOnlyList<Appointment>> GetByPatientIdAsync(Guid patientId, CancellationToken cancellationToken);
 
         Task AddAsync(Appointment appointment, CancellationToken cancellationToken);

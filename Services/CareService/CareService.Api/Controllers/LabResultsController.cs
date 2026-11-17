@@ -14,9 +14,12 @@ namespace CareService.Api.Controllers
     public class LabResultsController:ControllerBase
     {
         private readonly ILabOrderService _labOrderService;
-        public LabResultsController(ILabOrderService labOrderService)
+        private readonly ILabResultPdfService _labResultPdfService;
+        public LabResultsController(ILabOrderService labOrderService , 
+            ILabResultPdfService labResultPdfService)
         {
             _labOrderService = labOrderService;
+            _labResultPdfService = labResultPdfService;
         }
 
         [HttpGet("my")]
@@ -113,6 +116,67 @@ namespace CareService.Api.Controllers
             return Ok(response);
         }
 
+        [HttpPost("{id:guid}/upload")]
+        [Authorize(Roles = "Lab")]
+        [Consumes("multipart/form-data")]
+        [RequestSizeLimit(12 * 1024 * 1024)]
+        public async Task<IActionResult> UploadLabReport(
+                Guid id,
+                IFormFile file,
+                CancellationToken cancellationToken)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(
+                    ApiResponse<string>.Fail(
+                        new[] { "Please select a PDF file." },
+                        "File upload failed.",
+                        HttpStatusCode.BadRequest));
+            }
+
+            var labId = GetLabId();
+
+            await using var stream = file.OpenReadStream();
+
+            await _labResultPdfService.UploadAsync(
+                id,
+                labId,
+                stream,
+                file.FileName,
+                cancellationToken);
+
+            var response = ApiResponse<string>.Success(
+                "Lab report uploaded successfully.",
+                "PDF uploaded successfully.",
+                HttpStatusCode.OK);
+
+            return Ok(response);
+        }
+        [HttpGet("{id:guid}/download")]
+        [Authorize(Roles = "Doctor,Patient")]
+        public async Task<IActionResult> DownloadLabReport(
+             Guid id,
+             CancellationToken cancellationToken)
+        {
+            var userId = GetUserId();
+
+            var role = User.FindFirstValue(ClaimTypes.Role);
+
+            if (string.IsNullOrWhiteSpace(role))
+                return Forbid();
+
+            var pdf = await _labResultPdfService.DownloadAsync(
+                id,
+                userId,
+                role,
+                cancellationToken);
+
+            return File(
+                pdf.Content,
+                "application/pdf",
+                pdf.FileName);
+        }
+
         private Guid GetUserId()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
@@ -125,6 +189,19 @@ namespace CareService.Api.Controllers
             }
 
             return parsedUserId;
+        }
+
+        private Guid GetLabId()
+        {
+            var labId = User.FindFirstValue("lab_id");
+
+            if (!Guid.TryParse(labId, out var parsedLabId))
+            {
+                throw new UnauthorizedAccessException(
+                    "Lab profile ID not found in JWT.");
+            }
+
+            return parsedLabId;
         }
     }
 }

@@ -27,6 +27,10 @@ namespace AppointmentService.Domain.Entities
 
         public string? Notes { get; set; }
 
+        public Guid? UnavailablePeriodId { get; set; }
+
+        public AppointmentStatus? StatusBeforeUnavailable { get; set; }
+
         public DateTime CreatedAt { get; set; }
 
         public DateTime? UpdatedAt { get; set; }

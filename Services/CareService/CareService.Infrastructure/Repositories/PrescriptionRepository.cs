@@ -23,8 +23,7 @@ namespace CareService.Infrastructure.Repositories
         public async Task<Prescription?> GetByConsultationIdAsync(Guid consultationId,
             CancellationToken cancellationToken)
         {
-            return await _context.Prescriptions.
-                AsNoTracking()
+            return await _context.Prescriptions
                 .Include(p => p.Items)
                 .FirstOrDefaultAsync(p => p.ConsultationId == consultationId, cancellationToken);
         }
@@ -32,7 +31,6 @@ namespace CareService.Infrastructure.Repositories
         public async Task<Prescription?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         {
             return await _context.Prescriptions
-                .AsNoTracking()
                 .Include(p => p.Items)
                  .FirstOrDefaultAsync(
                  p => p.Id == id,
@@ -42,7 +40,6 @@ namespace CareService.Infrastructure.Repositories
         public async Task<IEnumerable<Prescription>> GetByPatientIdAsync(Guid patientId, CancellationToken cancellationToken)
         {
             return await _context.Prescriptions
-                .AsNoTracking()
                 .Include(p => p.Items)
                 .Where(p => p.PatientId == patientId)
                 .OrderByDescending(p => p.CreatedAt)

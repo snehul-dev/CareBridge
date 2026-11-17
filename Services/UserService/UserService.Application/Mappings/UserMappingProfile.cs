@@ -5,6 +5,7 @@ using UserService.Application.DTOs.Auth;
 using UserService.Application.DTOs.Doctors;
 using UserService.Application.DTOs.Labs;
 using UserService.Application.DTOs.Users;
+using UserService.Application.Services;
 using UserService.Domain.Entities;
 using UserService.Domain.Enums;
 
@@ -85,7 +86,12 @@ namespace UserService.Application.Mappings
                 opt => opt.MapFrom(src => src.User.LastName))
 
                 .ForMember(dest => dest.ProfileImageUrl,
-                opt => opt.MapFrom(src => src.User.ProfileImageUrl))
+                opt => opt.MapFrom(src =>
+                    string.IsNullOrWhiteSpace(src.User.ProfileImageUrl)
+                        ? null
+                        : ProfilePictureUrls.Build(
+                            src.User.Id,
+                            src.User.UpdatedAt)))
                 .ForMember(dest => dest.SpecializationName,
                 opt => opt.MapFrom(src => src.Specialization.Name));
 

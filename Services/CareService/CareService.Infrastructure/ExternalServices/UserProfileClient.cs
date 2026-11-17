@@ -15,12 +15,13 @@ namespace CareService.Infrastructure.ExternalServices
             _httpClient = httpClient;
         }
 
-        public async Task<UserPrescriptionProfileDto?> GetPrescriptionProfileAsync(
-            Guid userId,
+        public async Task<PrescriptionProfileResponseDto?> GetPrescriptionProfileAsync(
+            Guid doctorUserId,
+            Guid patientUserId,
             CancellationToken cancellationToken)
         {
             var response = await _httpClient.GetAsync(
-                $"api/internal/users/{userId}/prescription-profile",
+                $"api/internal/users/prescription-profile?doctorUserId={doctorUserId}&patientUserId={patientUserId}",
                 cancellationToken);
 
             if (response.StatusCode == HttpStatusCode.NotFound)
@@ -30,7 +31,7 @@ namespace CareService.Infrastructure.ExternalServices
 
             var apiResponse =
                 await response.Content.ReadFromJsonAsync<
-                    ApiResponse<UserPrescriptionProfileDto>>(
+                    ApiResponse<PrescriptionProfileResponseDto>>(
                     cancellationToken: cancellationToken);
 
             return apiResponse?.Data;

@@ -12,6 +12,8 @@ namespace AppointmentService.Application.Mappings
         public AppointmentMapping()
         {
             CreateMap<Appointment, AppointmentResponseDto>();
+
+            CreateMap<DoctorUnavailablePeriod, DoctorUnavailableResponseDto>();
         }
     }
 }

@@ -17,20 +17,23 @@ namespace AppointmentService.Application.Services
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IDoctorAvailabilityRepository _doctorAvailabilityRepository;
         private readonly IDoctorUnavailablePeriodRepository _doctorUnavailablePeriodRepository;
+        private readonly IUserServiceClient _userServiceClient;
         private readonly IMapper _mapper;
         private readonly TimeZoneInfo _clinicTimeZone;
 
         public AppointmentService(IAppointmentRepository appointmentRepository,
             IDoctorAvailabilityRepository doctorAvailabilityRepository,
             IDoctorUnavailablePeriodRepository doctorUnavailablePeriodRepository,
+            IUserServiceClient userServiceClient,
             IMapper mapper,
             IConfiguration configuration
-            
+
             )
         {
             _appointmentRepository = appointmentRepository;
             _doctorAvailabilityRepository = doctorAvailabilityRepository;
             _doctorUnavailablePeriodRepository = doctorUnavailablePeriodRepository;
+            _userServiceClient = userServiceClient;
             _mapper = mapper;
 
             var timeZoneId = configuration["Clinic:TimeZoneId"]
@@ -89,7 +92,7 @@ namespace AppointmentService.Application.Services
             await _appointmentRepository.SaveChangesAsync(cancellationToken);
 
             // Map the entity to the response DTO.
-            return new AppointmentResponseDto
+            var response = new AppointmentResponseDto
             {
                 Id = appointment.Id,
                 DoctorId = appointment.DoctorId,
@@ -98,7 +101,11 @@ namespace AppointmentService.Application.Services
                 StartTime = appointment.StartTime,
                 EndTime = appointment.EndTime,
                 Status = appointment.Status.ToString()
-            }; 
+            };
+
+            await EnrichWithDoctorDetailsAsync(response, cancellationToken);
+
+            return response;
 
         }
 
@@ -139,7 +146,9 @@ namespace AppointmentService.Application.Services
 
             await _appointmentRepository.SaveChangesAsync(cancellationToken);
 
-            return _mapper.Map<AppointmentResponseDto>(appointment);
+            var response = _mapper.Map<AppointmentResponseDto>(appointment);
+            await EnrichWithDoctorDetailsAsync(response, cancellationToken);
+            return response;
         }
 
         public async Task<AppointmentResponseDto> ConfirmAppointmentAsync(Guid appointmentId,
@@ -177,7 +186,9 @@ namespace AppointmentService.Application.Services
 
             await _appointmentRepository.SaveChangesAsync(cancellationToken);
 
-            return _mapper.Map<AppointmentResponseDto>(appointment);
+            var response = _mapper.Map<AppointmentResponseDto>(appointment);
+            await EnrichWithDoctorDetailsAsync(response, cancellationToken);
+            return response;
 
         }
 
@@ -194,7 +205,10 @@ namespace AppointmentService.Application.Services
             {
                 throw new BadRequestException("Appointment not found.");
             }
-            return _mapper.Map<AppointmentResponseDto>(appointment);
+
+            var response = _mapper.Map<AppointmentResponseDto>(appointment);
+            await EnrichWithDoctorDetailsAsync(response, cancellationToken);
+            return response;
 
         }
 
@@ -266,7 +280,7 @@ namespace AppointmentService.Application.Services
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                if (!schedule.IsAvailable || schedule.StartTime >= schedule.EndTime)
+                if (schedule.StartTime >= schedule.EndTime)
                 {
                     continue;
                 }
@@ -329,7 +343,9 @@ namespace AppointmentService.Application.Services
             }
 
             var appointments = await _appointmentRepository.GetByPatientIdAsync(patientId, cancellationToken);
-            return _mapper.Map<List<AppointmentResponseDto>>(appointments);
+            var response = _mapper.Map<List<AppointmentResponseDto>>(appointments);
+            await EnrichWithDoctorDetailsAsync(response, cancellationToken);
+            return response;
         }
 
         public async Task<AppointmentResponseDto> RejectAppointmentAsync(Guid appointmentId, Guid doctorId, CancellationToken cancellationToken)
@@ -375,7 +391,9 @@ namespace AppointmentService.Application.Services
             await _appointmentRepository.SaveChangesAsync(
                 cancellationToken);
 
-            return _mapper.Map<AppointmentResponseDto>(appointment);
+            var response = _mapper.Map<AppointmentResponseDto>(appointment);
+            await EnrichWithDoctorDetailsAsync(response, cancellationToken);
+            return response;
         }
 
         public async Task<AppointmentResponseDto> RescheduleAppointmentAsync(Guid appointmentId, 
@@ -424,7 +442,10 @@ namespace AppointmentService.Application.Services
             appointment.UpdatedAt = DateTime.UtcNow;
 
             await _appointmentRepository.SaveChangesAsync(cancellationToken);
-            return _mapper.Map<AppointmentResponseDto>(appointment);
+
+            var response = _mapper.Map<AppointmentResponseDto>(appointment);
+            await EnrichWithDoctorDetailsAsync(response, cancellationToken);
+            return response;
 
         }
 
@@ -540,6 +561,62 @@ namespace AppointmentService.Application.Services
             }
 
             return _mapper.Map<AppointmentResponseDto>(appointment);
+        }
+
+        private async Task EnrichWithDoctorDetailsAsync(
+            AppointmentResponseDto appointment,
+            CancellationToken cancellationToken)
+        {
+            await EnrichWithDoctorDetailsAsync(
+                new[] { appointment },
+                cancellationToken);
+        }
+
+        private async Task EnrichWithDoctorDetailsAsync(
+            IReadOnlyList<AppointmentResponseDto> appointments,
+            CancellationToken cancellationToken)
+        {
+            if (appointments.Count == 0)
+            {
+                return;
+            }
+
+            try
+            {
+                var doctorIds = appointments
+                    .Select(a => a.DoctorId)
+                    .Distinct()
+                    .ToList();
+
+                var doctors = await Task.WhenAll(
+                    doctorIds.Select(id =>
+                        _userServiceClient.GetDoctorByIdAsync(
+                            id,
+                            cancellationToken)));
+
+                var doctorsById = doctors
+                    .Where(d => d is not null)
+                    .ToDictionary(d => d!.UserId, d => d!);
+
+                foreach (var appointment in appointments)
+                {
+                    if (!doctorsById.TryGetValue(
+                        appointment.DoctorId,
+                        out var doctor))
+                    {
+                        continue;
+                    }
+
+                    appointment.DoctorName =
+                        $"{doctor.FirstName} {doctor.LastName}".Trim();
+                    appointment.SpecializationName =
+                        doctor.SpecializationName;
+                }
+            }
+            catch
+            {
+                // Best-effort: doctor details must never break appointment responses.
+            }
         }
 
 

@@ -41,7 +41,8 @@ namespace CareService.Application.Mappings
                 .ForMember(dest => dest.DoctorId, opt => opt.Ignore())
                 .ForMember(dest => dest.Consultation, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.PdfFileUrl, opt => opt.Ignore());
+                .ForMember(dest => dest.PdfGeneratedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.PdfStorageKey, opt => opt.Ignore());
 
             //prescriptionItemRequestDto to prescription
 
@@ -51,7 +52,11 @@ namespace CareService.Application.Mappings
                .ForMember(dest => dest.Prescription, opt => opt.Ignore())
                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore());
             //entity to dto
-            CreateMap<Prescription, PrescriptionResponseDto>();
+            CreateMap<Prescription, PrescriptionResponseDto>()
+                .ForMember(dest => dest.PdfDownloadUrl, opt => opt.MapFrom(
+                    src => src.PdfStorageKey == null
+                        ? null
+                        : $"/api/Prescriptions/{src.Id}/pdf"));
 
             CreateMap<PrescriptionItem, PrescriptionItemResponseDto>();
 
@@ -85,7 +90,13 @@ namespace CareService.Application.Mappings
             CreateMap<LabOrderItem, LabOrderItemResponseDto>();
 
             CreateMap<LabResult, LabResultResponseDto>()
-                .ForMember(d => d.TestName, o => o.Ignore());
+                .ForMember(d => d.TestName, o => o.Ignore())
+                .ForMember(d => d.HasPdf, o => o.MapFrom(
+                    s => !string.IsNullOrEmpty(s.PdfStorageKey)))
+                .ForMember(d => d.PdfDownloadUrl, o => o.MapFrom(
+                    s => string.IsNullOrEmpty(s.PdfStorageKey)
+                        ? null
+                        : $"/api/lab-results/{s.Id}/download"));
 
         }
     } 

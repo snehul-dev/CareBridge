@@ -15,7 +15,9 @@ namespace CareService.Domain.Entities
 
         public string? Notes   { get; set; } = string.Empty;
 
-        public string? PdfFileUrl { get; set; }
+        public string? PdfStorageKey { get; set; }
+
+        public DateTimeOffset? PdfGeneratedAt { get; set; }
 
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 

@@ -32,9 +32,11 @@ namespace CareService.Infrastructure.Configurations
                 .HasMaxLength(2000)
                 .IsRequired(false);
 
-      
-            builder.Property(p => p.PdfFileUrl)
-                .HasMaxLength(1000)
+            builder.Property(p => p.PdfStorageKey)
+                .HasMaxLength(500)
+                .IsRequired(false);
+
+            builder.Property(p => p.PdfGeneratedAt)
                 .IsRequired(false);
 
             

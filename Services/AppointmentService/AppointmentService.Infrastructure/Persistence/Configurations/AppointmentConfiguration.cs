@@ -55,6 +55,15 @@ namespace AppointmentService.Infrastructure.Persistence.Configurations
             builder.Property(x => x.UpdatedAt)
                 .HasColumnType("timestamp with time zone");
 
+            builder.Property(x => x.UnavailablePeriodId)
+                .HasColumnType("uuid");
+
+            builder.Property(x => x.StatusBeforeUnavailable)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            builder.HasIndex(x => x.UnavailablePeriodId);
+
             builder.HasIndex(x => new
             {
                 x.DoctorId,

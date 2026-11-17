@@ -4,8 +4,9 @@ namespace CareService.Application.Interfaces
 {
     public interface IUserProfileClient
     {
-        Task<UserPrescriptionProfileDto?> GetPrescriptionProfileAsync(
-            Guid userId,
+        Task<PrescriptionProfileResponseDto?> GetPrescriptionProfileAsync(
+            Guid doctorUserId,
+            Guid patientUserId,
             CancellationToken cancellationToken);
     }
 }

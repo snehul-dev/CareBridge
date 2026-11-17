@@ -1,9 +1,14 @@
 ﻿
+using Amazon;
+using Amazon.S3;
 using CareService.Application.Interfaces;
 using CareService.Application.Interfaces.Services;
+using CareService.Infrastructure.Configurations;
 using CareService.Infrastructure.ExternalServices;
+using CareService.Infrastructure.Pdf;
 using CareService.Infrastructure.Persistence;
 using CareService.Infrastructure.Repositories;
+using CareService.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,18 +30,51 @@ namespace CareService.Infrastructure
             services.AddDbContext<CareDbContext>(options =>
                 options.UseNpgsql(connectionString));
 
+            services.Configure<AwsSettings>(
+                configuration.GetSection("AWS")
+                );
+            services.AddSingleton<IAmazonS3>(sp =>
+            {
+                var settings = sp.GetRequiredService<
+                    Microsoft.Extensions.Options.IOptions<AwsSettings>>().Value;
+
+                var config = new AmazonS3Config
+                {
+                    RegionEndpoint = RegionEndpoint.GetBySystemName(
+                        settings.Region)
+                };
+
+                if (!string.IsNullOrWhiteSpace(settings.AccessKey) &&
+                    !string.IsNullOrWhiteSpace(settings.SecretKey))
+                {
+                    return new AmazonS3Client(
+                        settings.AccessKey.Trim(),
+                        settings.SecretKey.Trim(),
+                        config);
+                }
+
+                return new AmazonS3Client(config);
+            });
+
+            services.AddScoped<IFileStorageService, S3FileStorageService>();
+            services.AddScoped<IPrescriptionPdfGenerator, PrescriptionPdfGenerator>();
+
             // Repositories
             services.AddScoped<IConsultationRepository,ConsultationRepository>();
             services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
             services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
             services.AddScoped<ILabOrderRepository, LabOrderRepository>();
             services.AddScoped<IAdminRepository, AdminRepository>();
+            services.AddScoped<ILabResultRepository, LabResultRepository>();
 
             // HTTP Context Accessor
             services.AddHttpContextAccessor();
 
             // Authorization Header Handler
             services.AddTransient<AuthorizationHeaderHandler>();
+
+            // Service-to-Service Token Handler
+            services.AddTransient<ServiceTokenHandler>();
 
             // Appointment Service HTTP Client
             var appointmentServiceBaseUrl =
@@ -76,7 +114,7 @@ namespace CareService.Infrastructure
                 {
                     client.BaseAddress = new Uri(userServiceBaseUrl);
                 })
-                .AddHttpMessageHandler<AuthorizationHeaderHandler>();
+                .AddHttpMessageHandler<ServiceTokenHandler>();
 
             // Meeting Link Provider
             services.AddScoped<

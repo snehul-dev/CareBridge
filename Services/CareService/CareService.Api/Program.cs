@@ -13,6 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Register Controllers
 builder.Services.AddControllers();
 
+
 // JWT Authentication
 builder.Services.AddAuthentication(options =>
 {

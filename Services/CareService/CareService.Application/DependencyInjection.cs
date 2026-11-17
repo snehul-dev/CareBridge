@@ -14,15 +14,17 @@ namespace CareService.Application
     {
         public static IServiceCollection AddApplication(
             this IServiceCollection services
-            )
+            ) 
         {
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
             services.AddScoped<IConsultationService, ConsultationService>();
             services.AddScoped<IMedicalRecordService, MedicalRecordService>();
             services.AddScoped<IPrescriptionService, PrescriptionService>();
+            services.AddScoped<IPrescriptionPdfService, PrescriptionPdfService>();
             services.AddScoped<ILabOrderService, LabOrderService>();
             services.AddScoped<IAdminService, AdminService>();
+            services.AddScoped<ILabResultPdfService, LabResultPdfService>();
             
 
             services.AddAutoMapper(

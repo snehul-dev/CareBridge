@@ -19,5 +19,9 @@ namespace AppointmentService.Application.DTOs
         public TimeOnly EndTime { get; set; }
 
         public string Status { get; set; } = string.Empty;
+
+        public string? DoctorName { get; set; }
+
+        public string? SpecializationName { get; set; }
     }
 }

@@ -21,7 +21,7 @@ namespace UserService.Infrastructure.Repositories
         {
             return await _context.DoctorProfiles
          .AsNoTracking()
-         .Where(d => d.Id == doctorId && d.IsVerified)
+         .Where(d => (d.Id == doctorId || d.UserId == doctorId) && d.IsVerified)
          .Include(d => d.User)
          .Include(d => d.Specialization)
          .FirstOrDefaultAsync(cancellationToken);

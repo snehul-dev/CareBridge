@@ -14,10 +14,13 @@ namespace CareService.Api.Controllers
     public class PrescriptionsController:ControllerBase
     {
         private readonly IPrescriptionService _prescriptionService;
+        private readonly IPrescriptionPdfService _prescriptionPdfService;
 
-        public PrescriptionsController(IPrescriptionService prescriptionService)
+        public PrescriptionsController(IPrescriptionService prescriptionService,
+            IPrescriptionPdfService prescriptionPdfService)
         {
             _prescriptionService = prescriptionService;
+            _prescriptionPdfService = prescriptionPdfService;
         }
 
         [HttpPost]
@@ -109,6 +112,53 @@ namespace CareService.Api.Controllers
             var response = ApiResponse<PrescriptionResponseDto>.Success(
                 result,
                 "Prescription retrieved successfully.",
+                HttpStatusCode.OK);
+
+            return Ok(response);
+        }
+
+        [HttpGet("{id:guid}/pdf")]
+        [Authorize(Roles = "Patient,Doctor")]
+        public async Task<IActionResult> DownloadPdf(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            var userId = GetUserId();
+            var role = GetUserRole();
+
+            var pdfBytes = await _prescriptionPdfService.GetPdfAsync(
+                id,
+                userId,
+                role,
+                cancellationToken);
+
+            return File(pdfBytes, "application/pdf", $"prescription-{id}.pdf");
+        }
+
+        [HttpPost("{id:guid}/pdf")]
+        [Authorize(Roles = "Doctor")]
+        public async Task<ActionResult<ApiResponse<PrescriptionResponseDto>>> GeneratePdf(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            var userId = GetUserId();
+            var role = GetUserRole();
+
+            await _prescriptionPdfService.GenerateAndStoreAsync(
+                id,
+                userId,
+                role,
+                cancellationToken);
+
+            var result = await _prescriptionService.GetByIdAsync(
+                id,
+                userId,
+                role,
+                cancellationToken);
+
+            var response = ApiResponse<PrescriptionResponseDto>.Success(
+                result,
+                "Prescription PDF generated successfully.",
                 HttpStatusCode.OK);
 
             return Ok(response);

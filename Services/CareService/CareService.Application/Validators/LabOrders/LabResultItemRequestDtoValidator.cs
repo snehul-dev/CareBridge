@@ -32,9 +32,6 @@ namespace CareService.Application.Validators.LabOrders
 
             RuleFor(x => x.Notes)
                 .MaximumLength(2000);
-
-            RuleFor(x => x.ReportFileUrl)
-                .MaximumLength(1000);
         }
     }
 }

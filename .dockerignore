@@ -1,6 +1,11 @@
+
 **/bin/
 **/obj/
 **/.vs/
 **/.git/
 **/TestResults/
 .vscode/
+.env
+**/.env
+*.user
+*.suo

@@ -56,6 +56,15 @@ public sealed class GlobalExceptionMiddleware
                 ForbiddenException =>
                     HttpStatusCode.Forbidden,
 
+                System.UnauthorizedAccessException =>
+                    HttpStatusCode.Forbidden,
+
+                KeyNotFoundException =>
+                    HttpStatusCode.NotFound,
+
+                FileNotFoundException =>
+                    HttpStatusCode.NotFound,
+
                 ArgumentException =>
                     HttpStatusCode.BadRequest,
 
