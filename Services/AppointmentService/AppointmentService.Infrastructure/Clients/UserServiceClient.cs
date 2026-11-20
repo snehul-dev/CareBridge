@@ -41,6 +41,36 @@ namespace AppointmentService.Infrastructure.Clients
             return result?.Data;
         }
 
+        public async Task<IReadOnlyList<UserSummaryDto>> GetUserSummariesAsync(
+            IReadOnlyCollection<Guid> userIds,
+            CancellationToken cancellationToken)
+        {
+            if (userIds == null || userIds.Count == 0)
+            {
+                return Array.Empty<UserSummaryDto>();
+            }
+
+            var query = string.Join(
+                "&",
+                userIds.Select(id => $"ids={id}"));
+
+            using var response = await _httpClient.GetAsync(
+                $"api/users/summaries?{query}",
+                cancellationToken);
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+                return Array.Empty<UserSummaryDto>();
+
+            response.EnsureSuccessStatusCode();
+
+            var result = await response.Content.ReadFromJsonAsync<
+                ApiResponse<IReadOnlyList<UserSummaryDto>>>(
+                    JsonOptions,
+                    cancellationToken);
+
+            return result?.Data ?? Array.Empty<UserSummaryDto>();
+        }
+
         public async Task<IReadOnlyList<DoctorSearchResponse>> SearchDoctorsAsync(
             string? specialization,
             string? city,

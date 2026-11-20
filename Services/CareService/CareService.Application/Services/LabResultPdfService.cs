@@ -9,30 +9,40 @@ namespace CareService.Application.Services
     public class LabResultPdfService:ILabResultPdfService
     {
         private readonly ILabResultRepository _labResultRepository;
+        private readonly ILabOrderRepository _labOrderRepository;
         private readonly IFileStorageService _fileStorageService;
 
         private const long MaxFileSize = 10 * 1024 * 1024;
 
         public LabResultPdfService(ILabResultRepository labResultRepository, 
+             ILabOrderRepository labOrderRepository,
              IFileStorageService fileStorageService)
         {
             _labResultRepository = labResultRepository;
+            _labOrderRepository = labOrderRepository;
             _fileStorageService = fileStorageService;
         }
 
-        public async Task UploadAsync(Guid labResultId, Guid labUserId, Stream fileStream, 
+        public async Task UploadAsync(Guid labOrderId, Guid labUserId, Stream fileStream, 
             string fileName, CancellationToken cancellationToken)
         {
-            var labResult = await _labResultRepository.GetByIdWithLabOrderAsync(labResultId, cancellationToken);
+            var labOrder = await _labOrderRepository.GetByIdWithResultsAsync(labOrderId, cancellationToken);
 
-            if (labResult == null)
-                throw new NotFoundException("Lab result not found.");
-
-            var labOrder = labResult.LabOrderItem.LabOrder;
+            if (labOrder == null)
+                throw new NotFoundException("Lab order not found.");
 
             if (labOrder.AssignedLabId != labUserId)
                 throw new ForbiddenException(
                     "You are not assigned to this lab order.");
+
+            // Get all results for this order
+            var results = labOrder.Items
+                .SelectMany(item => item.LabResults)
+                .ToList();
+
+            if (!results.Any())
+                throw new InvalidOperationException(
+                    "Cannot upload PDF: no test results found for this order. Please submit results first.");
 
             // 3. Validate file
             if (fileStream == null || !fileStream.CanRead)
@@ -83,22 +93,25 @@ namespace CareService.Application.Services
 
             var storageKey = await _fileStorageService.SaveAsync(
                 fileContent,
-                $"{labResultId}.pdf",
+                $"{labOrderId}.pdf",
                 "application/pdf",
                 "lab-reports",
                 cancellationToken);
 
-            // 7. Save PDF metadata
-            labResult.PdfStorageKey = storageKey;
-            labResult.PdfFileName = safeFileName;
-            labResult.ContentType = "application/pdf";
-            labResult.FileSize = fileContent.Length;
-            labResult.UploadedBy = labUserId;
-            labResult.UploadedAt = DateTimeOffset.UtcNow;
+            // 7. Save PDF metadata to all results of this order
+            foreach (var result in results)
+            {
+                result.PdfStorageKey = storageKey;
+                result.PdfFileName = safeFileName;
+                result.ContentType = "application/pdf";
+                result.FileSize = fileContent.Length;
+                result.UploadedBy = labUserId;
+                result.UploadedAt = DateTimeOffset.UtcNow;
 
-            await _labResultRepository.UpdateAsync(
-                labResult,
-                cancellationToken);
+                await _labResultRepository.UpdateAsync(
+                    result,
+                    cancellationToken);
+            }
 
             await _labResultRepository.SaveChangesAsync(
                 cancellationToken);
@@ -127,7 +140,11 @@ namespace CareService.Application.Services
                 normalizedRole == "doctor" &&
                 labOrder.DoctorId == userId;
 
-            if (!isPatient && !isDoctor)
+            bool isLab =
+                normalizedRole == "lab" &&
+                labOrder.AssignedLabId == userId;
+
+            if (!isPatient && !isDoctor && !isLab)
                 throw new ForbiddenException(
                     "You are not authorized to download this report.");
 

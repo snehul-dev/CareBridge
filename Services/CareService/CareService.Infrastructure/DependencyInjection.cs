@@ -116,6 +116,37 @@ namespace CareService.Infrastructure
                 })
                 .AddHttpMessageHandler<ServiceTokenHandler>();
 
+            // Internal lab directory (service-to-service)
+            services.AddHttpClient<
+                IInternalLabClient,
+                InternalLabClient>(
+                client =>
+                {
+                    client.BaseAddress = new Uri(userServiceBaseUrl);
+                })
+                .AddHttpMessageHandler<ServiceTokenHandler>();
+
+            // Appointment statistics (service-to-service)
+            services.AddHttpClient<
+                IAppointmentStatsClient,
+                AppointmentStatsClient>(
+                client =>
+                {
+                    client.BaseAddress =
+                        new Uri(appointmentServiceBaseUrl);
+                })
+                .AddHttpMessageHandler<ServiceTokenHandler>();
+
+            // User statistics (service-to-service)
+            services.AddHttpClient<
+                IUserStatsClient,
+                UserStatsClient>(
+                client =>
+                {
+                    client.BaseAddress = new Uri(userServiceBaseUrl);
+                })
+                .AddHttpMessageHandler<ServiceTokenHandler>();
+
             // Meeting Link Provider
             services.AddScoped<
                 IMeetingLinkProvider,

@@ -22,6 +22,10 @@ namespace CareService.Application.Interfaces
             Guid patientId,
             CancellationToken cancellationToken);
 
+        Task<IEnumerable<PrescriptionResponseDto>> GetDoctorPrescriptionsAsync(
+            Guid doctorId,
+            CancellationToken cancellationToken);
+
         Task<PrescriptionResponseDto> GetByConsultationIdAsync(
             Guid consultationId,
             Guid userId,

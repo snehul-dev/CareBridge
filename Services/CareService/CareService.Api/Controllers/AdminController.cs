@@ -79,5 +79,80 @@ namespace CareService.Api.Controllers
 
             return Ok(response);
         }
+
+        // GET: api/admin/stats/counts
+        [HttpGet("stats/counts")]
+        public async Task<ActionResult<
+            ApiResponse<EntityCountsDto>>> GetEntityCounts(
+                CancellationToken cancellationToken)
+        {
+            var counts = await _adminService.GetEntityCountsAsync(
+                cancellationToken);
+
+            var response = ApiResponse<EntityCountsDto>.Success(
+                counts,
+                "Platform counts retrieved successfully.",
+                HttpStatusCode.OK);
+
+            return Ok(response);
+        }
+
+        // GET: api/admin/appointments/stats
+        [HttpGet("appointments/stats")]
+        public async Task<ActionResult<
+            ApiResponse<AppointmentStatisticsDto>>> GetAppointmentStatistics(
+                CancellationToken cancellationToken)
+        {
+            var statistics = await _adminService
+                .GetAppointmentStatisticsAsync(cancellationToken);
+
+            var response =
+                ApiResponse<AppointmentStatisticsDto>.Success(
+                    statistics,
+                    "Appointment statistics retrieved successfully.",
+                    HttpStatusCode.OK);
+
+            return Ok(response);
+        }
+
+        // GET: api/admin/appointments/trends?year=2026
+        [HttpGet("appointments/trends")]
+        public async Task<ActionResult<
+            ApiResponse<IReadOnlyList<AppointmentTrendDto>>>> GetAppointmentTrends(
+                [FromQuery] int? year,
+                CancellationToken cancellationToken)
+        {
+            var trends = await _adminService.GetAppointmentTrendsAsync(
+                year,
+                cancellationToken);
+
+            var response =
+                ApiResponse<IReadOnlyList<AppointmentTrendDto>>.Success(
+                    trends,
+                    "Appointment trends retrieved successfully.",
+                    HttpStatusCode.OK);
+
+            return Ok(response);
+        }
+
+        // GET: api/admin/doctors/popular?limit=5
+        [HttpGet("doctors/popular")]
+        public async Task<ActionResult<
+            ApiResponse<IReadOnlyList<PopularDoctorDto>>>> GetPopularDoctors(
+                [FromQuery] int limit = 5,
+                CancellationToken cancellationToken = default)
+        {
+            var doctors = await _adminService.GetPopularDoctorsAsync(
+                limit,
+                cancellationToken);
+
+            var response =
+                ApiResponse<IReadOnlyList<PopularDoctorDto>>.Success(
+                    doctors,
+                    "Popular doctors retrieved successfully.",
+                    HttpStatusCode.OK);
+
+            return Ok(response);
+        }
     }
 }

@@ -119,7 +119,15 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("CareServiceOnly", policy =>
+    {
+        policy.RequireAuthenticatedUser();
+
+        policy.RequireClaim("client_id", "CareService");
+    });
+});
 
 // AutoMapper
 builder.Services.AddAutoMapper(

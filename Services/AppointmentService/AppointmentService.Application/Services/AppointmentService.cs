@@ -100,10 +100,12 @@ namespace AppointmentService.Application.Services
                 AppointmentDate = appointment.AppointmentDate,
                 StartTime = appointment.StartTime,
                 EndTime = appointment.EndTime,
-                Status = appointment.Status.ToString()
+                Status = appointment.Status.ToString(),
+                AppointmentType = appointment.AppointmentType.ToString()
             };
 
             await EnrichWithDoctorDetailsAsync(response, cancellationToken);
+            await EnrichWithPatientNamesAsync(response, cancellationToken);
 
             return response;
 
@@ -148,6 +150,7 @@ namespace AppointmentService.Application.Services
 
             var response = _mapper.Map<AppointmentResponseDto>(appointment);
             await EnrichWithDoctorDetailsAsync(response, cancellationToken);
+            await EnrichWithPatientNamesAsync(response, cancellationToken);
             return response;
         }
 
@@ -188,6 +191,7 @@ namespace AppointmentService.Application.Services
 
             var response = _mapper.Map<AppointmentResponseDto>(appointment);
             await EnrichWithDoctorDetailsAsync(response, cancellationToken);
+            await EnrichWithPatientNamesAsync(response, cancellationToken);
             return response;
 
         }
@@ -208,6 +212,7 @@ namespace AppointmentService.Application.Services
 
             var response = _mapper.Map<AppointmentResponseDto>(appointment);
             await EnrichWithDoctorDetailsAsync(response, cancellationToken);
+            await EnrichWithPatientNamesAsync(response, cancellationToken);
             return response;
 
         }
@@ -332,7 +337,9 @@ namespace AppointmentService.Application.Services
             }
 
             var appointments = await _appointmentRepository.GetByDoctorIdAsync(doctorId, cancellationToken);
-            return _mapper.Map<List<AppointmentResponseDto>>(appointments);
+            var response = _mapper.Map<List<AppointmentResponseDto>>(appointments);
+            await EnrichWithPatientNamesAsync(response, cancellationToken);
+            return response;
         }
 
         public async Task<IReadOnlyList<AppointmentResponseDto>> GetMyAppointmentsAsync(Guid patientId, CancellationToken cancellationToken)
@@ -345,6 +352,7 @@ namespace AppointmentService.Application.Services
             var appointments = await _appointmentRepository.GetByPatientIdAsync(patientId, cancellationToken);
             var response = _mapper.Map<List<AppointmentResponseDto>>(appointments);
             await EnrichWithDoctorDetailsAsync(response, cancellationToken);
+            await EnrichWithPatientNamesAsync(response, cancellationToken);
             return response;
         }
 
@@ -393,6 +401,7 @@ namespace AppointmentService.Application.Services
 
             var response = _mapper.Map<AppointmentResponseDto>(appointment);
             await EnrichWithDoctorDetailsAsync(response, cancellationToken);
+            await EnrichWithPatientNamesAsync(response, cancellationToken);
             return response;
         }
 
@@ -445,6 +454,7 @@ namespace AppointmentService.Application.Services
 
             var response = _mapper.Map<AppointmentResponseDto>(appointment);
             await EnrichWithDoctorDetailsAsync(response, cancellationToken);
+            await EnrichWithPatientNamesAsync(response, cancellationToken);
             return response;
 
         }
@@ -560,7 +570,9 @@ namespace AppointmentService.Application.Services
                     "You are not authorized to access this appointment.");
             }
 
-            return _mapper.Map<AppointmentResponseDto>(appointment);
+            var response = _mapper.Map<AppointmentResponseDto>(appointment);
+            await EnrichWithPatientNamesAsync(response, cancellationToken);
+            return response;
         }
 
         private async Task EnrichWithDoctorDetailsAsync(
@@ -617,6 +629,93 @@ namespace AppointmentService.Application.Services
             {
                 // Best-effort: doctor details must never break appointment responses.
             }
+        }
+
+        private async Task EnrichWithPatientNamesAsync(
+            AppointmentResponseDto appointment,
+            CancellationToken cancellationToken)
+        {
+            await EnrichWithPatientNamesAsync(
+                new[] { appointment },
+                cancellationToken);
+        }
+
+        private async Task EnrichWithPatientNamesAsync(
+            IReadOnlyList<AppointmentResponseDto> appointments,
+            CancellationToken cancellationToken)
+        {
+            if (appointments.Count == 0)
+            {
+                return;
+            }
+
+            try
+            {
+                var patientIds = appointments
+                    .Select(a => a.PatientId)
+                    .Distinct()
+                    .ToList();
+
+                var summaries = await _userServiceClient
+                    .GetUserSummariesAsync(patientIds, cancellationToken);
+
+                var namesById = summaries
+                    .ToDictionary(
+                        s => s.Id,
+                        s => $"{s.FirstName} {s.LastName}".Trim());
+
+                var agesById = summaries
+                    .ToDictionary(
+                        s => s.Id,
+                        s => CalculateAge(s.DateOfBirth));
+
+                foreach (var appointment in appointments)
+                {
+                    if (namesById.TryGetValue(
+                        appointment.PatientId,
+                        out var name) &&
+                        !string.IsNullOrWhiteSpace(name))
+                    {
+                        appointment.PatientName = name;
+                    }
+
+                    if (agesById.TryGetValue(
+                        appointment.PatientId,
+                        out var age))
+                    {
+                        appointment.PatientAge = age;
+                    }
+                }
+            }
+            catch
+            {
+                // Best-effort: patient names must never break appointment responses.
+            }
+        }
+
+        private static int? CalculateAge(DateTime? dateOfBirth)
+        {
+            if (dateOfBirth is null)
+            {
+                return null;
+            }
+
+            var today = DateTime.UtcNow.Date;
+            var dob = dateOfBirth.Value.Date;
+
+            if (dob > today)
+            {
+                return null;
+            }
+
+            var age = today.Year - dob.Year;
+
+            if (dob > today.AddYears(-age))
+            {
+                age--;
+            }
+
+            return age < 0 ? null : age;
         }
 
 

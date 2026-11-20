@@ -16,17 +16,20 @@ namespace CareService.Application.Services
         private readonly IPrescriptionRepository _prescriptionRepository;
         private readonly IConsultationRepository _consultationRepository;
         private readonly IPrescriptionPdfService _prescriptionPdfService;
+        private readonly IUserProfileClient _userProfileClient;
         private readonly IMapper _mapper;
         private readonly ILogger<PrescriptionService> _logger;
         public PrescriptionService(IPrescriptionRepository prescriptionRepository , 
             IConsultationRepository consultationRepository,
             IPrescriptionPdfService prescriptionPdfService,
+            IUserProfileClient userProfileClient,
             IMapper mapper,
             ILogger<PrescriptionService> logger)
         {
             _prescriptionRepository = prescriptionRepository;
             _consultationRepository = consultationRepository;
             _prescriptionPdfService = prescriptionPdfService;
+            _userProfileClient = userProfileClient;
             _mapper = mapper;
             _logger = logger;
         }
@@ -132,7 +135,13 @@ namespace CareService.Application.Services
                     prescription.Id);
             }
 
-            return _mapper.Map<PrescriptionResponseDto>(prescription);
+            var created = await _prescriptionRepository.GetByIdAsync(
+                prescription.Id,
+                cancellationToken) ?? prescription;
+
+            return await EnrichDoctorAsync(
+                MapToDto(created, _mapper),
+                cancellationToken);
 
         }
 
@@ -181,7 +190,9 @@ namespace CareService.Application.Services
                     "Prescription not found for this consultation.");
             }
 
-            return _mapper.Map<PrescriptionResponseDto>(prescription);
+            return await EnrichDoctorAsync(
+                MapToDto(prescription, _mapper),
+                cancellationToken);
 
         }
 
@@ -219,7 +230,9 @@ namespace CareService.Application.Services
                     "You are not authorized to access this prescription.");
             }
 
-            return _mapper.Map<PrescriptionResponseDto>(prescription);
+            return await EnrichDoctorAsync(
+                MapToDto(prescription, _mapper),
+                cancellationToken);
 
         }
 
@@ -233,9 +246,125 @@ namespace CareService.Application.Services
                     patientId,
                     cancellationToken);
 
-            return _mapper.Map<IEnumerable<PrescriptionResponseDto>>(
-                prescriptions);
+            var dtos = prescriptions
+                .Select(p => MapToDto(p, _mapper))
+                .ToList();
 
+            await EnrichDoctorAsync(dtos, cancellationToken);
+
+            return dtos;
+
+        }
+
+        public async Task<IEnumerable<PrescriptionResponseDto>> GetDoctorPrescriptionsAsync(Guid doctorId,
+            CancellationToken cancellationToken)
+        {
+            var prescriptions =
+                await _prescriptionRepository.GetByDoctorIdAsync(
+                    doctorId,
+                    cancellationToken);
+
+            var dtos = prescriptions
+                .Select(p => MapToDto(p, _mapper))
+                .ToList();
+
+            await EnrichDoctorAsync(dtos, cancellationToken);
+
+            return dtos;
+        }
+
+        private static PrescriptionResponseDto MapToDto(
+            Prescription prescription,
+            IMapper mapper)
+        {
+            var dto = mapper.Map<PrescriptionResponseDto>(prescription);
+
+            var record = prescription.Consultation?.MedicalRecord;
+
+            dto.Diagnosis = record?.Diagnosis;
+            dto.TreatmentPlan = record?.TreatmentPlan;
+            dto.ClinicalNotes = record?.ClinicalNotes;
+
+            return dto;
+        }
+
+        private async Task<PrescriptionResponseDto> EnrichDoctorAsync(
+            PrescriptionResponseDto dto,
+            CancellationToken cancellationToken)
+        {
+            await EnrichDoctorAsync(
+                new List<PrescriptionResponseDto> { dto },
+                cancellationToken);
+
+            return dto;
+        }
+
+        private async Task<List<PrescriptionResponseDto>> EnrichDoctorAsync(
+            List<PrescriptionResponseDto> dtos,
+            CancellationToken cancellationToken)
+        {
+            if (dtos.Count == 0)
+                return dtos;
+
+            var cache = new Dictionary<(Guid DoctorId, Guid PatientId), (string? DoctorName, string? Specialization, string? PatientName)>();
+
+            foreach (var dto in dtos)
+            {
+                var key = (dto.DoctorId, dto.PatientId);
+
+                if (!cache.TryGetValue(key, out var info))
+                {
+                    info = await FetchDoctorInfoAsync(
+                        dto.DoctorId,
+                        dto.PatientId,
+                        cancellationToken);
+
+                    cache[key] = info;
+                }
+
+                dto.DoctorName = info.DoctorName;
+                dto.DoctorSpecialization = info.Specialization;
+                dto.PatientName = info.PatientName;
+            }
+
+            return dtos;
+        }
+
+        private async Task<(string? DoctorName, string? Specialization, string? PatientName)> FetchDoctorInfoAsync(
+            Guid doctorId,
+            Guid patientId,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var profile = await _userProfileClient.GetPrescriptionProfileAsync(
+                    doctorId,
+                    patientId,
+                    cancellationToken);
+
+                if (profile == null)
+                    return (null, null, null);
+
+                var doctorName =
+                    $"{profile.Doctor?.FirstName} {profile.Doctor?.LastName}".Trim();
+
+                var patientName =
+                    $"{profile.Patient?.FirstName} {profile.Patient?.LastName}".Trim();
+
+                return (
+                    string.IsNullOrWhiteSpace(doctorName) ? null : doctorName,
+                    profile.Doctor?.SpecializationName,
+                    string.IsNullOrWhiteSpace(patientName) ? null : patientName);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch
+            {
+                // Doctor info is best-effort; never fail the prescription response.
+                return (null, null, null);
+            }
         }
     }
 }

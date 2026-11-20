@@ -10,11 +10,23 @@ namespace CareService.Application.DTOs.Prescriptions
 
         public Guid PatientId { get; set; }
 
+        public string? PatientName { get; set; }
+
         public Guid DoctorId { get; set; }
 
         public Guid ConsultationId { get; set; }
 
+        public string? DoctorName { get; set; }
+
+        public string? DoctorSpecialization { get; set; }
+
         public string? Notes { get; set; }
+
+        public string? Diagnosis { get; set; }
+
+        public string? TreatmentPlan { get; set; }
+
+        public string? ClinicalNotes { get; set; }
 
         public DateTimeOffset? PdfGeneratedAt { get; set; }
 

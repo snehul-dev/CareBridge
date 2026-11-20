@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using UserService.Application.DTOs.Admin;
 using UserService.Domain.Entities;
 
 namespace UserService.Application.Interfaces
@@ -26,7 +27,12 @@ namespace UserService.Application.Interfaces
             Guid userId,
             CancellationToken cancellationToken);
 
-  
+        Task<RoleCountsDto> GetRoleCountsAsync(
+            CancellationToken cancellationToken);
+
+        Task<IReadOnlyList<DoctorSummaryDto>> GetDoctorSummariesAsync(
+            IReadOnlyCollection<Guid> userIds,
+            CancellationToken cancellationToken);
 
         Task SaveChangesAsync(CancellationToken cancellationToken);
     }

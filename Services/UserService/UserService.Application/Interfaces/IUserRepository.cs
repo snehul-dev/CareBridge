@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using UserService.Application.DTOs.Users;
 using UserService.Domain.Entities;
 
 namespace UserService.Application.Interfaces
@@ -15,6 +16,9 @@ namespace UserService.Application.Interfaces
         Task<User?> GetMyProfileAsync(Guid userId , CancellationToken cancellationToken);
         Task<User?> GetPrescriptionProfileByIdAsync(
             Guid id,
+            CancellationToken cancellationToken);
+        Task<IReadOnlyList<UserSummaryDto>> GetUserSummariesAsync(
+            IReadOnlyCollection<Guid> ids,
             CancellationToken cancellationToken);
         Task SaveChangesAsync(CancellationToken cancellationToken);
 

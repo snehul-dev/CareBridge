@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using UserService.Application.DTOs.Users;
 using UserService.Application.Interfaces;
 using UserService.Domain.Entities;
 using UserService.Infrastructure.Persistence;
@@ -68,6 +69,28 @@ namespace UserService.Infrastructure.Repositories
                 .FirstOrDefaultAsync(
                     u => u.Id == id,
                     cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<UserSummaryDto>> GetUserSummariesAsync(
+            IReadOnlyCollection<Guid> ids,
+            CancellationToken cancellationToken)
+        {
+            if (ids == null || ids.Count == 0)
+            {
+                return Array.Empty<UserSummaryDto>();
+            }
+
+            return await _context.Users
+                .AsNoTracking()
+                .Where(u => ids.Contains(u.Id))
+                .Select(u => new UserSummaryDto
+                {
+                    Id = u.Id,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    DateOfBirth = u.DateOfBirth
+                })
+                .ToListAsync(cancellationToken);
         }
 
         public async Task<User?> GetMyProfileAsync(Guid userId , CancellationToken cancellationToken)

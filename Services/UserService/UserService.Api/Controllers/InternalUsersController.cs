@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 
+using UserService.Application.DTOs.Admin;
 using UserService.Application.Interfaces;
 
 namespace UserService.Api.Controllers
@@ -14,11 +15,47 @@ namespace UserService.Api.Controllers
     public class InternalUsersController : ControllerBase
     {
         private readonly IUserProfileService _userProfileService;
+        private readonly IAdminRepository _adminRepository;
 
         public InternalUsersController(
-            IUserProfileService userProfileService)
+            IUserProfileService userProfileService,
+            IAdminRepository adminRepository)
         {
             _userProfileService = userProfileService;
+            _adminRepository = adminRepository;
+        }
+
+        [HttpGet("counts")]
+        public async Task<ActionResult<ApiResponse<RoleCountsDto>>> GetRoleCounts(
+            CancellationToken cancellationToken)
+        {
+            var counts = await _adminRepository
+                .GetRoleCountsAsync(cancellationToken);
+
+            var response = ApiResponse<RoleCountsDto>.Success(
+                counts,
+                "Role counts retrieved successfully.",
+                HttpStatusCode.OK);
+
+            return Ok(response);
+        }
+
+        // GET: api/internal/users/doctor-summaries?ids=...&ids=...
+        [HttpGet("doctor-summaries")]
+        public async Task<ActionResult<ApiResponse<IReadOnlyList<DoctorSummaryDto>>>> GetDoctorSummaries(
+            [FromQuery] Guid[] ids,
+            CancellationToken cancellationToken)
+        {
+            var summaries = await _adminRepository
+                .GetDoctorSummariesAsync(ids ?? Array.Empty<Guid>(), cancellationToken);
+
+            var response =
+                ApiResponse<IReadOnlyList<DoctorSummaryDto>>.Success(
+                    summaries,
+                    "Doctor summaries retrieved successfully.",
+                    HttpStatusCode.OK);
+
+            return Ok(response);
         }
 
         [HttpGet("prescription-profile")]

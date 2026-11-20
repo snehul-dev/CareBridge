@@ -16,5 +16,9 @@ namespace AppointmentService.Application.Interfaces
         Task<DoctorSearchResponse?> GetDoctorByIdAsync(
             Guid doctorId,
             CancellationToken cancellationToken);
+
+        Task<IReadOnlyList<UserSummaryDto>> GetUserSummariesAsync(
+            IReadOnlyCollection<Guid> userIds,
+            CancellationToken cancellationToken);
     }
 }

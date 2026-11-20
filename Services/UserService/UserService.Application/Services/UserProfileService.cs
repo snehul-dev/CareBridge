@@ -325,5 +325,14 @@ namespace UserService.Application.Services
 
             await _userRepository.SaveChangesAsync(cancellationToken);
         }
+
+        public async Task<IReadOnlyList<UserSummaryDto>> GetUserSummariesAsync(
+            IReadOnlyCollection<Guid> ids,
+            CancellationToken cancellationToken)
+        {
+            return await _userRepository.GetUserSummariesAsync(
+                ids,
+                cancellationToken);
+        }
     }
 }

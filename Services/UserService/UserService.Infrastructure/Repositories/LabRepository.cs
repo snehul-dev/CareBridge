@@ -25,6 +25,15 @@ namespace UserService.Infrastructure.Repositories
                 cancellationToken);
         }
 
+        public async Task<LabProfile?> GetByIdAsync(Guid labId, CancellationToken cancellationToken)
+        {
+            return await _context.LabProfiles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(
+                x => x.Id == labId,
+                cancellationToken);
+        }
+
         public async Task<List<LabProfile>> GetVerifiedLabsAsync(CancellationToken cancellationToken)
         {
             return await _context.LabProfiles

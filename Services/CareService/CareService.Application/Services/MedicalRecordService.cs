@@ -14,15 +14,18 @@ namespace CareService.Application.Services
     {
         private readonly IMedicalRecordRepository _medicalRecordRepository;
         private readonly IConsultationRepository _consultationRepository;
+        private readonly IUserProfileClient _userProfileClient;
         private readonly IMapper _mapper;
 
         public MedicalRecordService(IMedicalRecordRepository medicalRecordRepository,
             IConsultationRepository consultationRepository,
+            IUserProfileClient userProfileClient,
             IMapper mapper
             )
         {
             _medicalRecordRepository = medicalRecordRepository;
             _consultationRepository = consultationRepository;
+            _userProfileClient = userProfileClient;
             _mapper = mapper;
         }
         public async Task<MedicalRecordResponseDto> CreateAsync(CreateMedicalRecordRequestDto request,
@@ -75,7 +78,9 @@ namespace CareService.Application.Services
             await _medicalRecordRepository.AddAsync(medicalRecord, cancellationToken);
             await _medicalRecordRepository.SaveChangesAsync(cancellationToken);
 
-            return _mapper.Map<MedicalRecordResponseDto>(medicalRecord);
+            return await EnrichDoctorAsync(
+                _mapper.Map<MedicalRecordResponseDto>(medicalRecord),
+                cancellationToken);
 
 
 
@@ -118,7 +123,9 @@ namespace CareService.Application.Services
                 throw new ForbiddenException("You are not authorized to access this medical record.");
             }
 
-            return _mapper.Map<MedicalRecordResponseDto>(record);
+            return await EnrichDoctorAsync(
+                _mapper.Map<MedicalRecordResponseDto>(record),
+                cancellationToken);
         }
 
         public async Task<IEnumerable<MedicalRecordResponseDto>> GetPatientHistoryAsync(Guid patientId,
@@ -156,8 +163,86 @@ namespace CareService.Application.Services
                 cancellationToken
                 );
 
-            return _mapper.Map<IEnumerable< MedicalRecordResponseDto>>(records);
+            var dtos = _mapper.Map<List<MedicalRecordResponseDto>>(records);
 
+            await EnrichDoctorAsync(dtos, cancellationToken);
+
+            return dtos;
+
+        }
+
+        private async Task<MedicalRecordResponseDto> EnrichDoctorAsync(
+            MedicalRecordResponseDto dto,
+            CancellationToken cancellationToken)
+        {
+            await EnrichDoctorAsync(
+                new List<MedicalRecordResponseDto> { dto },
+                cancellationToken);
+
+            return dto;
+        }
+
+        private async Task<List<MedicalRecordResponseDto>> EnrichDoctorAsync(
+            List<MedicalRecordResponseDto> dtos,
+            CancellationToken cancellationToken)
+        {
+            if (dtos.Count == 0)
+                return dtos;
+
+            var cache = new Dictionary<(Guid DoctorId, Guid PatientId), (string? Name, string? Specialization)>();
+
+            foreach (var dto in dtos)
+            {
+                var key = (dto.DoctorId, dto.PatientId);
+
+                if (!cache.TryGetValue(key, out var info))
+                {
+                    info = await FetchDoctorInfoAsync(
+                        dto.DoctorId,
+                        dto.PatientId,
+                        cancellationToken);
+
+                    cache[key] = info;
+                }
+
+                dto.DoctorName = info.Name;
+                dto.DoctorSpecialization = info.Specialization;
+            }
+
+            return dtos;
+        }
+
+        private async Task<(string? Name, string? Specialization)> FetchDoctorInfoAsync(
+            Guid doctorId,
+            Guid patientId,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var profile = await _userProfileClient.GetPrescriptionProfileAsync(
+                    doctorId,
+                    patientId,
+                    cancellationToken);
+
+                if (profile?.Doctor == null)
+                    return (null, null);
+
+                var name =
+                    $"{profile.Doctor.FirstName} {profile.Doctor.LastName}".Trim();
+
+                return (
+                    string.IsNullOrWhiteSpace(name) ? null : name,
+                    profile.Doctor.SpecializationName);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch
+            {
+                // Doctor info is best-effort; never fail the medical record response.
+                return (null, null);
+            }
         }
     }
 }

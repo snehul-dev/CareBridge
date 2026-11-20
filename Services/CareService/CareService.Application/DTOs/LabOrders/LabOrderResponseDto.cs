@@ -14,6 +14,14 @@ namespace CareService.Application.DTOs.LabOrders
 
         public Guid DoctorId { get; set; }
 
+        public string? PatientName { get; set; }
+
+        public string? DoctorName { get; set; }
+
+        public string? DoctorSpecialization { get; set; }
+
+        public DateTime? PatientDateOfBirth { get; set; }
+
         public Guid? AssignedLabId { get; set; }
 
         public string? ClinicalNotes { get; set; }

@@ -10,6 +10,7 @@ namespace UserService.Application.DTOs.Admin
         public string LabName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string LicenseNumber { get; set; } = string.Empty;
+        public string AddressLine { get; set; } = string.Empty;
         public string? City { get; set; }
         public DateTime CreatedAt { get; set; }
     }

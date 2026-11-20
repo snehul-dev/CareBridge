@@ -26,6 +26,10 @@ namespace UserService.Application.Interfaces
             string role,
             CancellationToken cancellationToken);
 
+        Task<IReadOnlyList<UserSummaryDto>> GetUserSummariesAsync(
+            IReadOnlyCollection<Guid> ids,
+            CancellationToken cancellationToken);
+
 
     }
 }

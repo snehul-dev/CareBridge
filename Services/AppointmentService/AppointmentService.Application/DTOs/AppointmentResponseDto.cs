@@ -23,5 +23,11 @@ namespace AppointmentService.Application.DTOs
         public string? DoctorName { get; set; }
 
         public string? SpecializationName { get; set; }
+
+        public string? PatientName { get; set; }
+
+        public int? PatientAge { get; set; }
+
+        public string AppointmentType { get; set; } = string.Empty;
     }
 }

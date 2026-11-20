@@ -14,6 +14,10 @@ namespace UserService.Application.Interfaces
             Guid labId,
             CancellationToken cancellationToken);
 
+        Task<LabProfile?> GetByIdAsync(
+            Guid labId,
+            CancellationToken cancellationToken);
+
         Task<bool> IsActiveAndVerifiedAsync(
             Guid labId,
             CancellationToken cancellationToken);

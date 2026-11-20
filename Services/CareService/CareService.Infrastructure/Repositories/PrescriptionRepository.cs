@@ -25,6 +25,8 @@ namespace CareService.Infrastructure.Repositories
         {
             return await _context.Prescriptions
                 .Include(p => p.Items)
+                .Include(p => p.Consultation)
+                    .ThenInclude(c => c.MedicalRecord)
                 .FirstOrDefaultAsync(p => p.ConsultationId == consultationId, cancellationToken);
         }
 
@@ -32,6 +34,8 @@ namespace CareService.Infrastructure.Repositories
         {
             return await _context.Prescriptions
                 .Include(p => p.Items)
+                .Include(p => p.Consultation)
+                    .ThenInclude(c => c.MedicalRecord)
                  .FirstOrDefaultAsync(
                  p => p.Id == id,
                 cancellationToken);
@@ -41,7 +45,20 @@ namespace CareService.Infrastructure.Repositories
         {
             return await _context.Prescriptions
                 .Include(p => p.Items)
+                .Include(p => p.Consultation)
+                    .ThenInclude(c => c.MedicalRecord)
                 .Where(p => p.PatientId == patientId)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<IEnumerable<Prescription>> GetByDoctorIdAsync(Guid doctorId, CancellationToken cancellationToken)
+        {
+            return await _context.Prescriptions
+                .Include(p => p.Items)
+                .Include(p => p.Consultation)
+                    .ThenInclude(c => c.MedicalRecord)
+                .Where(p => p.DoctorId == doctorId)
                 .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync(cancellationToken);
         }

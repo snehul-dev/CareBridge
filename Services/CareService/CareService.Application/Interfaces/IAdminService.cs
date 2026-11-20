@@ -18,5 +18,19 @@ namespace CareService.Application.Interfaces
         Task<LabOrderStatisticsDto> GetLabOrderStatisticsAsync(
             string? status,
             CancellationToken cancellationToken);
+
+        Task<EntityCountsDto> GetEntityCountsAsync(
+            CancellationToken cancellationToken);
+
+        Task<AppointmentStatisticsDto> GetAppointmentStatisticsAsync(
+            CancellationToken cancellationToken);
+
+        Task<IReadOnlyList<AppointmentTrendDto>> GetAppointmentTrendsAsync(
+            int? year,
+            CancellationToken cancellationToken);
+
+        Task<IReadOnlyList<PopularDoctorDto>> GetPopularDoctorsAsync(
+            int limit,
+            CancellationToken cancellationToken);
     }
 }

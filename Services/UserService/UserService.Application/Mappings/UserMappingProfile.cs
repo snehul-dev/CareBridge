@@ -153,7 +153,19 @@ namespace UserService.Application.Mappings
                 .ForMember(d => d.VerificationStatus,
                     o => o.MapFrom(s => s.VerificationStatus.ToString()));
 
-            CreateMap<User, AdminUserResponseDto>();
+            CreateMap<User, AdminUserResponseDto>()
+                .ForMember(dest => dest.Role,
+                    opt => opt.MapFrom(src => src.UserRoles
+                        .Select(ur => ur.Role.Name)
+                        .FirstOrDefault() ?? string.Empty))
+
+                .ForMember(dest => dest.ProfileImageUrl,
+                    opt => opt.MapFrom(src =>
+                        string.IsNullOrWhiteSpace(src.ProfileImageUrl)
+                            ? null
+                            : ProfilePictureUrls.Build(
+                                src.Id,
+                                src.UpdatedAt)));
         }
     }
 }

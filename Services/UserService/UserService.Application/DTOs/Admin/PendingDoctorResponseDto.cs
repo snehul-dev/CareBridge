@@ -12,6 +12,7 @@ namespace UserService.Application.DTOs.Admin
         public string Specialization { get; set; } = string.Empty;
         public string Qualification { get; set; } = string.Empty;
         public int ExperienceYears { get; set; }
+        public string? HospitalOrClinicName { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }

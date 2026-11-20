@@ -7,7 +7,7 @@ namespace CareService.Application.Interfaces
     public interface ILabResultPdfService
     {
         Task UploadAsync(
-             Guid labResultId,
+             Guid labOrderId,
             Guid labUserId,
             Stream fileStream,
             string fileName,

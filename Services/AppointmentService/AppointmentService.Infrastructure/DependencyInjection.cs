@@ -27,6 +27,8 @@ namespace AppointmentService.Infrastructure
 
             services.AddScoped<IDoctorUnavailablePeriodRepository, DoctorUnavailablePeriodRepository>();
 
+            services.AddScoped<IAppointmentStatsRepository, AppointmentStatsRepository>();
+
             // Application service
             services.AddScoped<IAppointmentService,AppointmentService.Application.Services.AppointmentService>();
 

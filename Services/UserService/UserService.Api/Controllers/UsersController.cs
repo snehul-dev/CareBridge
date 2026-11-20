@@ -97,6 +97,25 @@ namespace UserService.Api.Controllers
             return File(picture.Content, picture.ContentType);
         }
 
+        [HttpGet("summaries")]
+        public async Task<IActionResult> GetUserSummariesAsync(
+            [FromQuery] Guid[] ids,
+            CancellationToken cancellationToken)
+        {
+            var summaries = await _userProfileService
+                .GetUserSummariesAsync(
+                    ids ?? Array.Empty<Guid>(),
+                    cancellationToken);
+
+            var response = ApiResponse<IReadOnlyList<UserSummaryDto>>
+                .Success(
+                    summaries,
+                    "User summaries retrieved successfully.",
+                    HttpStatusCode.OK);
+
+            return StatusCode(response.StatusCode, response);
+        }
+
 
 
     }

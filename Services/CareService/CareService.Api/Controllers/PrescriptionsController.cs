@@ -93,7 +93,26 @@ namespace CareService.Api.Controllers
             return Ok(response);
         }
 
-        
+        [HttpGet("doctor/my")]
+        [Authorize(Roles = "Doctor")]
+        public async Task<ActionResult<ApiResponse<IEnumerable<PrescriptionResponseDto>>>> GetDoctorPrescriptions(
+            CancellationToken cancellationToken)
+        {
+            var doctorId = GetUserId();
+
+            var result = await _prescriptionService.GetDoctorPrescriptionsAsync(
+                doctorId,
+                cancellationToken);
+
+            var response = ApiResponse<IEnumerable<PrescriptionResponseDto>>.Success(
+                result,
+                "Your prescriptions retrieved successfully.",
+                HttpStatusCode.OK);
+
+            return Ok(response);
+        }
+
+
         [HttpGet("consultation/{consultationId:guid}")]
         [Authorize(Roles = "Patient,Doctor")]
         public async Task<ActionResult<ApiResponse<PrescriptionResponseDto>>> GetByConsultationId(

@@ -1,6 +1,7 @@
 ﻿using CareBridge.Shared.Responses;
 using CareService.Application.DTOs.LabOrders;
 using CareService.Application.Interfaces;
+using CareService.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
@@ -15,11 +16,17 @@ namespace CareService.Api.Controllers
     {
         private readonly ILabOrderService _labOrderService;
         private readonly ILabResultPdfService _labResultPdfService;
+        private readonly IUserProfileClient _userProfileClient;
+        private readonly IInternalLabClient _internalLabClient;
         public LabResultsController(ILabOrderService labOrderService , 
-            ILabResultPdfService labResultPdfService)
+            ILabResultPdfService labResultPdfService,
+            IUserProfileClient userProfileClient,
+            IInternalLabClient internalLabClient)
         {
             _labOrderService = labOrderService;
             _labResultPdfService = labResultPdfService;
+            _userProfileClient = userProfileClient;
+            _internalLabClient = internalLabClient;
         }
 
         [HttpGet("my")]
@@ -33,6 +40,7 @@ namespace CareService.Api.Controllers
                 cancellationToken);
 
             var allResults = new List<LabResultResponseDto>();
+            var labNameCache = new Dictionary<Guid, string?>();
 
             foreach (var order in orders)
             {
@@ -40,6 +48,12 @@ namespace CareService.Api.Controllers
                     order.Id,
                     patientId,
                     "patient",
+                    cancellationToken);
+
+                await EnrichResultsAsync(
+                    results,
+                    order,
+                    labNameCache,
                     cancellationToken);
 
                 allResults.AddRange(results);
@@ -51,6 +65,170 @@ namespace CareService.Api.Controllers
                 HttpStatusCode.OK);
 
             return Ok(response);
+        }
+
+        [HttpGet("lab/my")]
+        [Authorize(Roles = "Lab")]
+        public async Task<ActionResult<ApiResponse<List<LabResultResponseDto>>>>GetLabResults(
+            [FromQuery] string? username,
+            [FromQuery] string? testName,
+            CancellationToken cancellationToken)
+        {
+            var labId = GetLabId();
+
+            var orders = await _labOrderService.GetLabOrdersAsync(
+                labId,
+                cancellationToken);
+
+            var allResults = new List<LabResultResponseDto>();
+            var patientNameCache = new Dictionary<Guid, (string? Name, string? Email)>();
+            var uploaderNameCache = new Dictionary<Guid, string?>();
+
+            foreach (var order in orders)
+            {
+                var results = await _labOrderService.GetResultsAsync(
+                    order.Id,
+                    labId,
+                    "lab",
+                    cancellationToken);
+
+                // Enrich with patient info
+                var cacheKey = order.PatientId;
+                if (!patientNameCache.TryGetValue(cacheKey, out var patientInfo))
+                {
+                    patientInfo = await FetchPatientInfoAsync(order.DoctorId, order.PatientId, cancellationToken);
+                    patientNameCache[cacheKey] = patientInfo;
+                }
+
+                foreach (var result in results)
+                {
+                    result.PatientName = patientInfo.Name;
+                    result.Username = patientInfo.Email;
+                    result.PatientEmail = patientInfo.Email;
+
+                    // Resolve uploader (lab) name
+                    if (result.UploadedBy.HasValue)
+                    {
+                        var uploaderId = result.UploadedBy.Value;
+                        if (!uploaderNameCache.TryGetValue(uploaderId, out var uploaderName))
+                        {
+                            uploaderName = await SafeGetLabNameAsync(uploaderId, cancellationToken);
+                            uploaderNameCache[uploaderId] = uploaderName;
+                        }
+                        result.UploadedByName = uploaderName;
+                    }
+                }
+
+                allResults.AddRange(results);
+            }
+
+            // Apply filters
+            if (!string.IsNullOrWhiteSpace(username))
+            {
+                allResults = allResults
+                    .Where(r => r.PatientName?.Contains(username, StringComparison.OrdinalIgnoreCase) == true ||
+                               r.Username?.Contains(username, StringComparison.OrdinalIgnoreCase) == true ||
+                               r.PatientEmail?.Contains(username, StringComparison.OrdinalIgnoreCase) == true)
+                    .ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(testName))
+            {
+                allResults = allResults
+                    .Where(r => r.TestName?.Contains(testName, StringComparison.OrdinalIgnoreCase) == true)
+                    .ToList();
+            }
+
+            var response = ApiResponse<List<LabResultResponseDto>>.Success(
+                allResults,
+                "Lab results retrieved successfully",
+                HttpStatusCode.OK);
+
+            return Ok(response);
+        }
+
+        private async Task<(string? Name, string? Email)> FetchPatientInfoAsync(
+            Guid doctorUserId,
+            Guid patientUserId,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var profile = await _userProfileClient
+                    .GetPrescriptionProfileAsync(
+                        doctorUserId,
+                        patientUserId,
+                        cancellationToken);
+
+                if (profile?.Patient == null)
+                    return (null, null);
+
+                var name = $"{profile.Patient.FirstName} {profile.Patient.LastName}".Trim();
+                var email = profile.Patient.Email;
+
+                return (
+                    string.IsNullOrWhiteSpace(name) ? null : name,
+                    string.IsNullOrWhiteSpace(email) ? null : email);
+            }
+            catch
+            {
+                return (null, null);
+            }
+        }
+
+        private async Task<string?> SafeGetLabNameAsync(
+            Guid labId,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await _internalLabClient.GetLabNameAsync(labId, cancellationToken);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private async Task EnrichResultsAsync(
+            List<LabResultResponseDto> results,
+            LabOrderResponseDto order,
+            Dictionary<Guid, string?> labNameCache,
+            CancellationToken cancellationToken)
+        {
+            string? labName = null;
+
+            if (order.AssignedLabId.HasValue)
+            {
+                var labId = order.AssignedLabId.Value;
+
+                if (!labNameCache.TryGetValue(labId, out labName))
+                {
+                    labName = await SafeGetLabNameAsync(labId, cancellationToken);
+                    labNameCache[labId] = labName;
+                }
+            }
+
+            var patientName = order.PatientName;
+
+            if (string.IsNullOrWhiteSpace(patientName))
+            {
+                var info = await FetchPatientInfoAsync(
+                    order.DoctorId,
+                    order.PatientId,
+                    cancellationToken);
+
+                patientName = info.Name;
+            }
+
+            foreach (var result in results)
+            {
+                result.LabName = labName;
+                result.PatientName = patientName;
+                result.DoctorId = order.DoctorId;
+                result.DoctorName = order.DoctorName;
+                result.DoctorSpecialization = order.DoctorSpecialization;
+            }
         }
 
         [HttpGet("order/{labOrderId:guid}")]
@@ -75,6 +253,18 @@ namespace CareService.Api.Controllers
                 role.ToLowerInvariant(),
                 cancellationToken);
 
+            var order = await _labOrderService.GetByIdAsync(
+                labOrderId,
+                userId,
+                role.ToLowerInvariant(),
+                cancellationToken);
+
+            await EnrichResultsAsync(
+                results,
+                order,
+                new Dictionary<Guid, string?>(),
+                cancellationToken);
+
             var response = ApiResponse<List<LabResultResponseDto>>
                 .Success(
                 results,
@@ -96,6 +286,7 @@ namespace CareService.Api.Controllers
                 cancellationToken);
 
             var allResults = new List<LabResultResponseDto>();
+            var labNameCache = new Dictionary<Guid, string?>();
 
             foreach (var order in orders)
             {
@@ -103,6 +294,12 @@ namespace CareService.Api.Controllers
                     order.Id,
                     doctorId,
                     "doctor",
+                    cancellationToken);
+
+                await EnrichResultsAsync(
+                    results,
+                    order,
+                    labNameCache,
                     cancellationToken);
 
                 allResults.AddRange(results);
@@ -153,7 +350,7 @@ namespace CareService.Api.Controllers
             return Ok(response);
         }
         [HttpGet("{id:guid}/download")]
-        [Authorize(Roles = "Doctor,Patient")]
+        [Authorize(Roles = "Doctor,Patient,Lab")]
         public async Task<IActionResult> DownloadLabReport(
              Guid id,
              CancellationToken cancellationToken)

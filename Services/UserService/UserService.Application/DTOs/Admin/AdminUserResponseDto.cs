@@ -16,6 +16,10 @@ namespace UserService.Application.DTOs.Admin
 
         public string PhoneNumber { get; set; } = string.Empty;
 
+        public string? ProfileImageUrl { get; set; }
+
+        public string Role { get; set; } = string.Empty;
+
         public bool IsActive { get; set; }
 
         public DateTime CreatedAt { get; set; }

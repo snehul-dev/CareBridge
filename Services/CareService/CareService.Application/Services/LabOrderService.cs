@@ -18,17 +18,20 @@ namespace CareService.Application.Services
         private readonly ILabOrderRepository _labOrderRepository;
         private readonly IConsultationRepository _consultationRepository;
         private readonly ILabDirectoryClient _labDirectoryClient;
+        private readonly IUserProfileClient _userProfileClient;
         private readonly IMapper _mapper;
 
         public LabOrderService(
             ILabOrderRepository labOrderRepository,
             IConsultationRepository consultationRepository,
             ILabDirectoryClient labDirectoryClient,
+            IUserProfileClient userProfileClient,
             IMapper mapper)
         {
             _labOrderRepository = labOrderRepository;
             _consultationRepository = consultationRepository;
             _labDirectoryClient = labDirectoryClient;
+            _userProfileClient = userProfileClient;
             _mapper = mapper;
         }
 
@@ -77,7 +80,9 @@ namespace CareService.Application.Services
             await _labOrderRepository.SaveChangesAsync(
                 cancellationToken);
 
-            return _mapper.Map<LabOrderResponseDto>(labOrder);
+            return await EnrichNamesAsync(
+                _mapper.Map<LabOrderResponseDto>(labOrder),
+                cancellationToken);
         }
 
         //Get Doctor Laborders
@@ -90,10 +95,12 @@ namespace CareService.Application.Services
                     doctorId,
                     cancellationToken);
 
-            return _mapper.Map<List<LabOrderResponseDto>>(orders);
+            return await EnrichNamesAsync(
+                _mapper.Map<List<LabOrderResponseDto>>(orders),
+                cancellationToken);
         }
 
- 
+
         //Get Patient laborders
         public async Task<List<LabOrderResponseDto>> GetPatientOrdersAsync(
             Guid patientId,
@@ -104,7 +111,9 @@ namespace CareService.Application.Services
                     patientId,
                     cancellationToken);
 
-            return _mapper.Map<List<LabOrderResponseDto>>(orders);
+            return await EnrichNamesAsync(
+                _mapper.Map<List<LabOrderResponseDto>>(orders),
+                cancellationToken);
         }
 
       //select lab
@@ -149,7 +158,9 @@ namespace CareService.Application.Services
             await _labOrderRepository.SaveChangesAsync(
                 cancellationToken);
 
-            return _mapper.Map<LabOrderResponseDto>(order);
+            return await EnrichNamesAsync(
+                _mapper.Map<LabOrderResponseDto>(order),
+                cancellationToken);
         }
 
            //Lab Get the Assigned Orders
@@ -163,7 +174,9 @@ namespace CareService.Application.Services
                     labId,
                     cancellationToken);
 
-            return _mapper.Map<List<LabOrderResponseDto>>(orders);
+            return await EnrichNamesAsync(
+                _mapper.Map<List<LabOrderResponseDto>>(orders),
+                cancellationToken);
         }
 
         //Lab Accept Order
@@ -189,7 +202,9 @@ namespace CareService.Application.Services
             await _labOrderRepository.SaveChangesAsync(
                 cancellationToken);
 
-            return _mapper.Map<LabOrderResponseDto>(order);
+            return await EnrichNamesAsync(
+                _mapper.Map<LabOrderResponseDto>(order),
+                cancellationToken);
         }
 
       //Lab reject Order
@@ -215,7 +230,9 @@ namespace CareService.Application.Services
             await _labOrderRepository.SaveChangesAsync(
                 cancellationToken);
 
-            return _mapper.Map<LabOrderResponseDto>(order);
+            return await EnrichNamesAsync(
+                _mapper.Map<LabOrderResponseDto>(order),
+                cancellationToken);
         }
 
         //Lab Sample collected
@@ -242,7 +259,9 @@ namespace CareService.Application.Services
             await _labOrderRepository.SaveChangesAsync(
                 cancellationToken);
 
-            return _mapper.Map<LabOrderResponseDto>(order);
+            return await EnrichNamesAsync(
+                _mapper.Map<LabOrderResponseDto>(order),
+                cancellationToken);
         }
 
         //Lab marks progress
@@ -268,7 +287,9 @@ namespace CareService.Application.Services
             await _labOrderRepository.SaveChangesAsync(
                 cancellationToken);
 
-            return _mapper.Map<LabOrderResponseDto>(order);
+            return await EnrichNamesAsync(
+                _mapper.Map<LabOrderResponseDto>(order),
+                cancellationToken);
         }
 
      //Lab submit result
@@ -328,7 +349,8 @@ namespace CareService.Application.Services
                     Interpretation = resultRequest.Interpretation,
                     Notes = resultRequest.Notes,
                     ResultDate = DateTimeOffset.UtcNow,
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    UploadedBy = labId
                 };
 
                 await _labOrderRepository.AddLabResultAsync(
@@ -382,7 +404,9 @@ namespace CareService.Application.Services
 
             EnsureOrderAccess(order, userId, role);
 
-            return _mapper.Map<LabOrderResponseDto>(order);
+            return await EnrichNamesAsync(
+                _mapper.Map<LabOrderResponseDto>(order),
+                cancellationToken);
         }
 
        //Get results
@@ -472,6 +496,85 @@ namespace CareService.Application.Services
             {
                 throw new UnauthorizedAccessException(
                     "You are not authorized to access this lab order.");
+            }
+        }
+
+        private async Task<LabOrderResponseDto> EnrichNamesAsync(
+            LabOrderResponseDto dto,
+            CancellationToken cancellationToken)
+        {
+            await EnrichNamesAsync(
+                new List<LabOrderResponseDto> { dto },
+                cancellationToken);
+
+            return dto;
+        }
+
+        private async Task<List<LabOrderResponseDto>> EnrichNamesAsync(
+            List<LabOrderResponseDto> dtos,
+            CancellationToken cancellationToken)
+        {
+            var cache = new Dictionary<(Guid DoctorId, Guid PatientId), (string? DoctorName, string? DoctorSpecialization, string? PatientName, DateTime? PatientDateOfBirth)>();
+
+            foreach (var dto in dtos)
+            {
+                var key = (dto.DoctorId, dto.PatientId);
+
+                if (!cache.TryGetValue(key, out var names))
+                {
+                    names = await FetchNamesAsync(
+                        dto.DoctorId,
+                        dto.PatientId,
+                        cancellationToken);
+
+                    cache[key] = names;
+                }
+
+                dto.DoctorName = names.DoctorName;
+                dto.DoctorSpecialization = names.DoctorSpecialization;
+                dto.PatientName = names.PatientName;
+                dto.PatientDateOfBirth = names.PatientDateOfBirth;
+            }
+
+            return dtos;
+        }
+
+        private async Task<(string? DoctorName, string? DoctorSpecialization, string? PatientName, DateTime? PatientDateOfBirth)> FetchNamesAsync(
+            Guid doctorId,
+            Guid patientId,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var profile = await _userProfileClient
+                    .GetPrescriptionProfileAsync(
+                        doctorId,
+                        patientId,
+                        cancellationToken);
+
+                if (profile == null)
+                    return (null, null, null, null);
+
+                var doctorName =
+                    $"{profile.Doctor.FirstName} {profile.Doctor.LastName}".Trim();
+
+                var patientName =
+                    $"{profile.Patient.FirstName} {profile.Patient.LastName}".Trim();
+
+                return (
+                    string.IsNullOrWhiteSpace(doctorName) ? null : doctorName,
+                    profile.Doctor.SpecializationName,
+                    string.IsNullOrWhiteSpace(patientName) ? null : patientName,
+                    profile.Patient.DateOfBirth);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch
+            {
+                // Name resolution is best-effort; never fail the lab order response.
+                return (null, null, null, null);
             }
         }
     }

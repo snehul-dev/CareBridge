@@ -11,7 +11,10 @@ namespace AppointmentService.Application.Mappings
     {
         public AppointmentMapping()
         {
-            CreateMap<Appointment, AppointmentResponseDto>();
+            CreateMap<Appointment, AppointmentResponseDto>()
+                .ForMember(
+                    d => d.AppointmentType,
+                    o => o.MapFrom(s => s.AppointmentType.ToString()));
 
             CreateMap<DoctorUnavailablePeriod, DoctorUnavailableResponseDto>();
         }

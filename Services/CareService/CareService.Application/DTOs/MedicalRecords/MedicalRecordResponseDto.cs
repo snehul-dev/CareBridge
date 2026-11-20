@@ -14,6 +14,10 @@ namespace CareService.Application.DTOs.MedicalRecords
 
         public Guid ConsultationId { get; set; }
 
+        public string? DoctorName { get; set; }
+
+        public string? DoctorSpecialization { get; set; }
+
         public string? Symptoms { get; set; }
 
         public string Diagnosis { get; set; } = string.Empty;
