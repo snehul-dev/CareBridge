@@ -9,7 +9,7 @@ namespace UserService.Api.Controllers
 {
     [ApiController]
     [Authorize]
-    [Route("api/[controller]")]
+    [Route("api/users/[controller]")]
     public class DoctorsController : ControllerBase
     {
         private readonly IDoctorService _doctorService;

@@ -8,7 +8,7 @@ using System.Net;
 namespace CareService.Api.Controllers
 {
     [ApiController]
-    [Route("api/admin")]
+    [Route("api/care/admin")]
     [Authorize(Roles = "Admin")]
     public class AdminController:ControllerBase
     {

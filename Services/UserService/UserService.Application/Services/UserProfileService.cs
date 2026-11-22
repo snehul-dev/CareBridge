@@ -120,6 +120,9 @@ namespace UserService.Application.Services
                     UserId = doctor.Id,
                     FirstName = doctor.FirstName,
                     LastName = doctor.LastName,
+                    ProfileImageUrl = string.IsNullOrWhiteSpace(doctor.ProfileImageUrl)
+                        ? null
+                        : ProfilePictureUrls.Build(doctor.Id, doctor.UpdatedAt),
                     Qualification = doctor.DoctorProfile.Qualification,
                     LicenseNumber = doctor.DoctorProfile.LicenseNumber,
                     HospitalOrClinicName =

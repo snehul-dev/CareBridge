@@ -19,7 +19,7 @@ namespace CareService.Infrastructure.ExternalServices
             CancellationToken cancellationToken)
         {
             var response = await _httpClient.GetAsync(
-                $"api/internal/labs/{labId}",
+                $"api/users/internal/labs/{labId}",
                 cancellationToken);
 
             if (response.StatusCode == HttpStatusCode.NotFound)

@@ -10,7 +10,7 @@ namespace AppointmentService.Api.Controllers
 {
     [ApiController]
     [Authorize(Roles = "Doctor")]
-    [Route("api/doctors/unavailable")]
+    [Route("api/appointments/doctors/unavailable")]
     public class DoctorUnavailableController : ControllerBase
     {
         private readonly IDoctorUnavailablePeriodService _unavailablePeriodService;

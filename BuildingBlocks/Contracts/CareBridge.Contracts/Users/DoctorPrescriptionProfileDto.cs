@@ -9,6 +9,7 @@ namespace CareBridge.Contracts.Users
         public Guid UserId { get; set; }
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
+        public string? ProfileImageUrl { get; set; }
         public string? Qualification { get; set; }
         public string? LicenseNumber { get; set; }
         public string? HospitalOrClinicName { get; set; }

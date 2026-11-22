@@ -342,6 +342,25 @@ namespace AppointmentService.Application.Services
             return response;
         }
 
+        public async Task<IReadOnlyList<AppointmentResponseDto>> GetDoctorTodayAppointmentsAsync(Guid doctorId, CancellationToken cancellationToken)
+        {
+            if (doctorId == Guid.Empty)
+            {
+                throw new BadRequestException("Doctor ID cannot be empty.");
+            }
+
+            var now = TimeZoneInfo.ConvertTime(
+                         DateTimeOffset.UtcNow,
+                         _clinicTimeZone);
+            var today = DateOnly.FromDateTime(now.DateTime);
+
+            var appointments = await _appointmentRepository.GetByDoctorAndDateAsync(
+                doctorId, today, cancellationToken);
+            var response = _mapper.Map<List<AppointmentResponseDto>>(appointments);
+            await EnrichWithPatientNamesAsync(response, cancellationToken);
+            return response;
+        }
+
         public async Task<IReadOnlyList<AppointmentResponseDto>> GetMyAppointmentsAsync(Guid patientId, CancellationToken cancellationToken)
         {
             if(patientId == Guid.Empty)
@@ -621,6 +640,7 @@ namespace AppointmentService.Application.Services
 
                     appointment.DoctorName =
                         $"{doctor.FirstName} {doctor.LastName}".Trim();
+                    appointment.DoctorProfileImageUrl = doctor.ProfileImageUrl;
                     appointment.SpecializationName =
                         doctor.SpecializationName;
                 }

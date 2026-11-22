@@ -7,7 +7,7 @@ using UserService.Application.Interfaces;
 namespace UserService.Api.Controllers
 {
     [ApiController]
-    [Route("api/internal/labs")]
+    [Route("api/users/internal/labs")]
     [Authorize(Policy = "CareServiceOnly")]
     public class InternalLabsController : ControllerBase
     {

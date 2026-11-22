@@ -15,6 +15,12 @@ namespace CareService.Domain.Entities
 
         public string? Notes   { get; set; } = string.Empty;
 
+        public string? Diagnosis { get; set; }
+
+        public string? TreatmentPlan { get; set; }
+
+        public string? ClinicalNotes { get; set; }
+
         public string? PdfStorageKey { get; set; }
 
         public DateTimeOffset? PdfGeneratedAt { get; set; }

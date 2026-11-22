@@ -8,7 +8,7 @@ using System.Net;
 namespace AppointmentService.Api.Controllers
 {
     [ApiController]
-    [Route("api/internal/appointments")]
+    [Route("api/appointments/internal/appointments")]
     [Authorize(Policy = "CareServiceOnly")]
     public class InternalAppointmentsController : ControllerBase
     {

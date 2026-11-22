@@ -32,6 +32,18 @@ namespace CareService.Infrastructure.Configurations
                 .HasMaxLength(2000)
                 .IsRequired(false);
 
+            builder.Property(p => p.Diagnosis)
+                .HasMaxLength(2000)
+                .IsRequired(false);
+
+            builder.Property(p => p.TreatmentPlan)
+                .HasMaxLength(3000)
+                .IsRequired(false);
+
+            builder.Property(p => p.ClinicalNotes)
+                .HasMaxLength(5000)
+                .IsRequired(false);
+
             builder.Property(p => p.PdfStorageKey)
                 .HasMaxLength(500)
                 .IsRequired(false);

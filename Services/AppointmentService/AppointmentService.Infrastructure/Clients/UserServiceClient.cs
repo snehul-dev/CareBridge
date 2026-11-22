@@ -25,7 +25,7 @@ namespace AppointmentService.Infrastructure.Clients
             CancellationToken cancellationToken)
         {
             using var response = await _httpClient.GetAsync(
-                $"api/doctors/{doctorId}",
+                $"api/users/Doctors/{doctorId}",
                 cancellationToken);
 
             if (response.StatusCode == HttpStatusCode.NotFound)
@@ -55,7 +55,7 @@ namespace AppointmentService.Infrastructure.Clients
                 userIds.Select(id => $"ids={id}"));
 
             using var response = await _httpClient.GetAsync(
-                $"api/users/summaries?{query}",
+                $"api/users/Users/summaries?{query}",
                 cancellationToken);
 
             if (response.StatusCode == HttpStatusCode.NotFound)
@@ -97,7 +97,7 @@ namespace AppointmentService.Infrastructure.Clients
                     $"district={Uri.EscapeDataString(district.Trim())}");
             }
 
-            var url = "api/doctors";
+            var url = "api/users/Doctors";
 
             if (query.Count > 0)
                 url += "?" + string.Join("&", query);

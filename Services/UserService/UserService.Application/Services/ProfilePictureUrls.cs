@@ -9,7 +9,7 @@ namespace UserService.Application.Services
         public static string Build(Guid userId, DateTime? version)
         {
             var ticks = version?.Ticks ?? 0;
-            return $"/api/Users/{userId}/profile-picture?v={ticks}";
+            return $"/api/users/Users/{userId}/profile-picture?v={ticks}";
         }
     }
 }

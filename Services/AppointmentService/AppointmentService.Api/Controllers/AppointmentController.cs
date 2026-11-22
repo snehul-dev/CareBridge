@@ -109,6 +109,28 @@ namespace AppointmentService.Api.Controllers
             return Ok(response);
         }
 
+        [HttpGet("doctor/today")]
+        [Authorize(Roles = "Doctor")]
+        public async Task<
+                        ActionResult<ApiResponse<IReadOnlyList<AppointmentResponseDto>>>>
+                        GetDoctorTodayAppointmentsAsync(
+                        CancellationToken cancellationToken)
+        {
+            var doctorId = GetUserId();
+
+            var appointments =
+                await _appointmentService.GetDoctorTodayAppointmentsAsync(doctorId, cancellationToken);
+
+            var response =
+                ApiResponse<IReadOnlyList<AppointmentResponseDto>>
+                .Success(
+                    appointments,
+                    "Today's appointments retrieved successfully.",
+                    HttpStatusCode.OK
+                    );
+            return Ok(response);
+        }
+
         [HttpGet("{id:guid}")]
         [Authorize(Roles = "Doctor,Patient")]
         public async Task<ActionResult<ApiResponse<AppointmentResponseDto>>>

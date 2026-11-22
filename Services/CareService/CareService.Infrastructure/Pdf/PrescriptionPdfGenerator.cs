@@ -69,7 +69,25 @@ namespace CareService.Infrastructure.Pdf
 
                         column.Item().PaddingTop(5).LineHorizontal(1);
 
-                        column.Item().Text("PRESCRIBED MEDICINES").Bold().FontSize(14);
+                        if (!string.IsNullOrWhiteSpace(prescription.Diagnosis))
+                        {
+                            column.Item().PaddingTop(5).Text("DIAGNOSIS").Bold();
+                            column.Item().Text(prescription.Diagnosis);
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(prescription.TreatmentPlan))
+                        {
+                            column.Item().PaddingTop(5).Text("TREATMENT PLAN").Bold();
+                            column.Item().Text(prescription.TreatmentPlan);
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(prescription.ClinicalNotes))
+                        {
+                            column.Item().PaddingTop(5).Text("CLINICAL NOTES").Bold();
+                            column.Item().Text(prescription.ClinicalNotes);
+                        }
+
+                        column.Item().PaddingTop(10).Text("PRESCRIBED MEDICINES").Bold().FontSize(14);
 
                         column.Item().Table(table =>
                         {

@@ -9,8 +9,11 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"
+      Jwt__Secret: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
     ports:
-      - "5000:8080"
+      - "8090:8080"
     depends_on:
       userservice:
         condition: service_started
@@ -104,6 +107,7 @@ services:
         condition: service_healthy
 
   appointmentservice:
+    image: carebridge-appointmentservice:latest
     build:
       context: .
       dockerfile: Services/AppointmentService/AppointmentService.Api/Dockerfile
@@ -129,6 +133,7 @@ services:
 
 # CARE SERVICE
   careservice:
+    image: carebridge-careservice:latest
     build:
       context: .
       dockerfile: Services/CareService/CareService.Api/Dockerfile

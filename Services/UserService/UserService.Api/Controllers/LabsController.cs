@@ -9,7 +9,7 @@ using CareBridge.Contracts.Labs;
 namespace UserService.Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/users/[controller]")]
     public class LabsController:ControllerBase
     {
 

@@ -18,6 +18,8 @@ namespace CareService.Application.DTOs.Prescriptions
 
         public string? DoctorName { get; set; }
 
+        public string? DoctorProfileImageUrl { get; set; }
+
         public string? DoctorSpecialization { get; set; }
 
         public string? Notes { get; set; }

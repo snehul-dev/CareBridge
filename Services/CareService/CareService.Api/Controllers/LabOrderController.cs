@@ -10,7 +10,7 @@ using System.Security.Claims;
 namespace CareService.Api.Controllers
 {
     [ApiController]
-    [Route("api/lab-orders")]
+    [Route("api/care/lab-orders")]
     [Authorize]
     public class LabOrderController : ControllerBase
     {

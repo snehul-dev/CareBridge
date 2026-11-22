@@ -10,7 +10,7 @@ namespace UserService.Api.Controllers
 {
     [ApiController]
     [Authorize(Roles ="Admin")]
-    [Route("api/[controller]")]
+    [Route("api/users/[controller]")]
     public class AdminController:ControllerBase
     {
         private readonly IAdminService _adminService;

@@ -18,6 +18,20 @@ namespace CareService.Application.Validators.Prescriptions
                 .MaximumLength(1000)
                 .WithMessage("Notes cannot exceed 1000 characters.");
 
+            RuleFor(x => x.Diagnosis)
+                .NotEmpty()
+                .WithMessage("Diagnosis is required.")
+                .MaximumLength(2000)
+                .WithMessage("Diagnosis cannot exceed 2000 characters.");
+
+            RuleFor(x => x.TreatmentPlan)
+                .MaximumLength(3000)
+                .WithMessage("Treatment plan cannot exceed 3000 characters.");
+
+            RuleFor(x => x.ClinicalNotes)
+                .MaximumLength(5000)
+                .WithMessage("Clinical notes cannot exceed 5000 characters.");
+
             RuleFor(x => x.Items)
                 .NotNull()
                 .WithMessage("Prescription items are required.")

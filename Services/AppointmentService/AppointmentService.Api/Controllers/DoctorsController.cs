@@ -11,7 +11,7 @@ namespace AppointmentService.Api.Controllers
 {
     [ApiController]
     [Authorize]
-    [Route("api/[controller]")]
+    [Route("api/appointments/[controller]")]
     public class DoctorsController : ControllerBase
     {
         private readonly IUserServiceClient _userServiceClient;

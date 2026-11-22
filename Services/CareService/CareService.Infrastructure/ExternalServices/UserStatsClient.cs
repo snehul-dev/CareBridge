@@ -19,7 +19,7 @@ namespace CareService.Infrastructure.ExternalServices
             CancellationToken cancellationToken)
         {
             var response = await _httpClient.GetAsync(
-                "api/internal/users/counts",
+                "api/users/internal/users/counts",
                 cancellationToken);
 
             response.EnsureSuccessStatusCode();
@@ -46,7 +46,7 @@ namespace CareService.Infrastructure.ExternalServices
                 userIds.Select(id => $"ids={id}"));
 
             var response = await _httpClient.GetAsync(
-                $"api/internal/users/doctor-summaries?{query}",
+                $"api/users/internal/users/doctor-summaries?{query}",
                 cancellationToken);
 
             response.EnsureSuccessStatusCode();

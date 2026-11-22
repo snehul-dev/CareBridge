@@ -20,7 +20,7 @@ namespace CareService.Infrastructure.ExternalServices
         public async Task<bool> IsVerifiedLabAsync(Guid labId, CancellationToken cancellationToken)
         {
             var response = await _httpClient.GetAsync(
-                $"api/labs/{labId}/verification",
+                $"api/users/Labs/{labId}/verification",
                 cancellationToken
                 );
 

@@ -56,7 +56,7 @@ namespace CareService.Application.Mappings
                 .ForMember(dest => dest.PdfDownloadUrl, opt => opt.MapFrom(
                     src => src.PdfStorageKey == null
                         ? null
-                        : $"/api/Prescriptions/{src.Id}/pdf"));
+                        : $"/api/care/Prescriptions/{src.Id}/pdf"));
 
             CreateMap<PrescriptionItem, PrescriptionItemResponseDto>();
 
@@ -96,7 +96,7 @@ namespace CareService.Application.Mappings
                 .ForMember(d => d.PdfDownloadUrl, o => o.MapFrom(
                     s => string.IsNullOrEmpty(s.PdfStorageKey)
                         ? null
-                        : $"/api/lab-results/{s.Id}/download"));
+                        : $"/api/care/lab-results/{s.Id}/download"));
 
         }
     } 

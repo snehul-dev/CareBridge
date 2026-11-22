@@ -8,7 +8,7 @@ using System.Net;
 namespace CareService.Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/care/[controller]")]
     [Authorize]
     public class ConsultationController : ControllerBase
     {

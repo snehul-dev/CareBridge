@@ -24,6 +24,10 @@ namespace AppointmentService.Application.Interfaces
         Task<IReadOnlyList<AppointmentResponseDto>> GetDoctorAppointmentsAsync(
             Guid doctorId, CancellationToken cancellationToken
             );
+
+        Task<IReadOnlyList<AppointmentResponseDto>> GetDoctorTodayAppointmentsAsync(
+            Guid doctorId, CancellationToken cancellationToken
+            );
         Task<AppointmentResponseDto> ConfirmAppointmentAsync(Guid appointmentId,
             Guid doctorId,
             CancellationToken cancellationToken

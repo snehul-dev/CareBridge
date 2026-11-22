@@ -19,7 +19,7 @@ namespace CareService.Infrastructure.ExternalServices
             CancellationToken cancellationToken)
         {
             var response = await _httpClient.GetAsync(
-                "api/internal/appointments/stats",
+                "api/appointments/internal/appointments/stats",
                 cancellationToken);
 
             response.EnsureSuccessStatusCode();
@@ -37,8 +37,8 @@ namespace CareService.Infrastructure.ExternalServices
             CancellationToken cancellationToken)
         {
             var url = year.HasValue
-                ? $"api/internal/appointments/trends?year={year.Value}"
-                : "api/internal/appointments/trends";
+                ? $"api/appointments/internal/appointments/trends?year={year.Value}"
+                : "api/appointments/internal/appointments/trends";
 
             var response = await _httpClient.GetAsync(
                 url,
@@ -59,7 +59,7 @@ namespace CareService.Infrastructure.ExternalServices
             CancellationToken cancellationToken)
         {
             var response = await _httpClient.GetAsync(
-                $"api/internal/appointments/popular-doctors?limit={limit}",
+                $"api/appointments/internal/appointments/popular-doctors?limit={limit}",
                 cancellationToken);
 
             response.EnsureSuccessStatusCode();

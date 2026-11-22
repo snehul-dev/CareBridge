@@ -285,11 +285,19 @@ namespace CareService.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("ClinicalNotes")
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
+
                     b.Property<Guid>("ConsultationId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Diagnosis")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<Guid>("DoctorId")
                         .HasColumnType("uuid");
@@ -307,6 +315,10 @@ namespace CareService.Infrastructure.Migrations
                     b.Property<string>("PdfStorageKey")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<string>("TreatmentPlan")
+                        .HasMaxLength(3000)
+                        .HasColumnType("character varying(3000)");
 
                     b.HasKey("Id");
 

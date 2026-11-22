@@ -1,6 +1,8 @@
 
 using Microsoft.OpenApi;
 using CareBridge.Shared.Middlewares;
+using CareBridge.Shared.Responses;
+using System.Net;
 using CareService.Infrastructure;
 using CareService.Application;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -54,9 +56,53 @@ builder.Services.AddAuthentication(options =>
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromSeconds(30),
 
-            RoleClaimType = ClaimTypes.Role
+                RoleClaimType = ClaimTypes.Role
+            };
+
+        // Standardized unauthorized and forbidden responses
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = async context =>
+            {
+                context.HandleResponse();
+
+                context.Response.StatusCode =
+                    StatusCodes.Status401Unauthorized;
+
+                var response = ApiResponse<object>.Fail(
+                    new[]
+                    {
+                        "A valid access token is required."
+                    },
+                    "Unauthorized",
+                    HttpStatusCode.Unauthorized);
+
+                await context.Response.WriteAsJsonAsync(
+                    response,
+                    cancellationToken:
+                        context.HttpContext.RequestAborted);
+            },
+
+            OnForbidden = async context =>
+            {
+                context.Response.StatusCode =
+                    StatusCodes.Status403Forbidden;
+
+                var response = ApiResponse<object>.Fail(
+                    new[]
+                    {
+                        "You do not have permission to perform this action."
+                    },
+                    "Forbidden",
+                    HttpStatusCode.Forbidden);
+
+                await context.Response.WriteAsJsonAsync(
+                    response,
+                    cancellationToken:
+                        context.HttpContext.RequestAborted);
+            }
         };
-});
+    });
 
 builder.Services.AddAuthorization();
 

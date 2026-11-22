@@ -123,6 +123,8 @@ namespace CareService.Application.Services
                 doctor.City
             }.Where(part => !string.IsNullOrWhiteSpace(part)));
 
+            var record = prescription.Consultation?.MedicalRecord;
+
             return new PrescriptionPdfDto
             {
                 PrescriptionId = prescription.Id,
@@ -141,6 +143,16 @@ namespace CareService.Application.Services
                 PatientEmail = patient.Email ?? string.Empty,
                 PatientPhone = patient.PhoneNumber ?? string.Empty,
                 BloodGroup = patient.BloodGroup,
+
+                Diagnosis = string.IsNullOrWhiteSpace(prescription.Diagnosis)
+                    ? record?.Diagnosis
+                    : prescription.Diagnosis,
+                TreatmentPlan = string.IsNullOrWhiteSpace(prescription.TreatmentPlan)
+                    ? record?.TreatmentPlan
+                    : prescription.TreatmentPlan,
+                ClinicalNotes = string.IsNullOrWhiteSpace(prescription.ClinicalNotes)
+                    ? record?.ClinicalNotes
+                    : prescription.ClinicalNotes,
 
                 Notes = prescription.Notes,
 

@@ -21,7 +21,7 @@ namespace CareService.Infrastructure.ExternalServices
             CancellationToken cancellationToken)
         {
             var response = await _httpClient.GetAsync(
-                $"api/internal/users/prescription-profile?doctorUserId={doctorUserId}&patientUserId={patientUserId}",
+                $"api/users/internal/users/prescription-profile?doctorUserId={doctorUserId}&patientUserId={patientUserId}",
                 cancellationToken);
 
             if (response.StatusCode == HttpStatusCode.NotFound)

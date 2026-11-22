@@ -22,6 +22,10 @@ namespace CareService.Application.DTOs.Prescriptions
         public string PatientPhone { get; set; } = string.Empty;
         public string? BloodGroup { get; set; }
 
+        public string? Diagnosis { get; set; }
+        public string? TreatmentPlan { get; set; }
+        public string? ClinicalNotes { get; set; }
+
         public string? Notes { get; set; }
 
         public List<PrescriptionPdfItemDto> Items { get; set; } = new();

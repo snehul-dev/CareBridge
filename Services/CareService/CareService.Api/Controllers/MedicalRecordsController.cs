@@ -10,7 +10,7 @@ namespace CareService.Api.Controllers
 {
     [ApiController]
     [Authorize]
-    [Route("api/[controller]")]
+    [Route("api/care/[controller]")]
     public class MedicalRecordsController:ControllerBase
     {
         private readonly IMedicalRecordService _medicalRecordService;

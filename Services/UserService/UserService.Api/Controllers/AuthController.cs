@@ -1,5 +1,6 @@
 ﻿
 using CareBridge.Shared.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using UserService.Application.DTOs.Auth;
@@ -9,7 +10,7 @@ using UserService.Application.Validators;
 namespace UserService.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/users/[controller]")]
 public class AuthController : ControllerBase
 {
     private readonly RegisterPatientValidator _patientValidator;
@@ -124,6 +125,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("Login")]
+    [AllowAnonymous]
     public async Task<IActionResult> LoginAsync(LoginRequest request , CancellationToken cancellationToken)
     {
         var result = await _authService.LoginAsync(request,cancellationToken);

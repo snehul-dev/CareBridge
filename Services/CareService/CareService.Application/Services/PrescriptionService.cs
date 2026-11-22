@@ -52,6 +52,19 @@ namespace CareService.Application.Services
                     "Medicine name, dosage, frequency and duration are required.");
             }
 
+            if (string.IsNullOrWhiteSpace(request.Diagnosis))
+            {
+                throw new BadRequestException("Diagnosis is required.");
+            }
+
+            if (request.Diagnosis.Trim().Length > 2000 ||
+                (request.TreatmentPlan?.Trim().Length ?? 0) > 3000 ||
+                (request.ClinicalNotes?.Trim().Length ?? 0) > 5000)
+            {
+                throw new BadRequestException(
+                    "Diagnosis must be 2000 characters or fewer, treatment plan 3000 or fewer, and clinical notes 5000 or fewer.");
+            }
+
             var consultation = await _consultationRepository.GetByIdAsync(request.ConsultationId,
                 cancellationToken);
 
@@ -109,6 +122,13 @@ namespace CareService.Application.Services
             }
 
             prescription.Notes = prescription.Notes?.Trim();
+            prescription.Diagnosis = prescription.Diagnosis?.Trim();
+            prescription.TreatmentPlan = string.IsNullOrWhiteSpace(prescription.TreatmentPlan)
+                ? null
+                : prescription.TreatmentPlan.Trim();
+            prescription.ClinicalNotes = string.IsNullOrWhiteSpace(prescription.ClinicalNotes)
+                ? null
+                : prescription.ClinicalNotes.Trim();
 
             await _prescriptionRepository.AddAsync(
                 prescription,
@@ -281,9 +301,20 @@ namespace CareService.Application.Services
 
             var record = prescription.Consultation?.MedicalRecord;
 
-            dto.Diagnosis = record?.Diagnosis;
-            dto.TreatmentPlan = record?.TreatmentPlan;
-            dto.ClinicalNotes = record?.ClinicalNotes;
+            if (string.IsNullOrWhiteSpace(dto.Diagnosis))
+            {
+                dto.Diagnosis = record?.Diagnosis;
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.TreatmentPlan))
+            {
+                dto.TreatmentPlan = record?.TreatmentPlan;
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.ClinicalNotes))
+            {
+                dto.ClinicalNotes = record?.ClinicalNotes;
+            }
 
             return dto;
         }
@@ -306,7 +337,7 @@ namespace CareService.Application.Services
             if (dtos.Count == 0)
                 return dtos;
 
-            var cache = new Dictionary<(Guid DoctorId, Guid PatientId), (string? DoctorName, string? Specialization, string? PatientName)>();
+            var cache = new Dictionary<(Guid DoctorId, Guid PatientId), (string? DoctorName, string? Specialization, string? PatientName, string? DoctorProfileImageUrl)>();
 
             foreach (var dto in dtos)
             {
@@ -325,12 +356,13 @@ namespace CareService.Application.Services
                 dto.DoctorName = info.DoctorName;
                 dto.DoctorSpecialization = info.Specialization;
                 dto.PatientName = info.PatientName;
+                dto.DoctorProfileImageUrl = info.DoctorProfileImageUrl;
             }
 
             return dtos;
         }
 
-        private async Task<(string? DoctorName, string? Specialization, string? PatientName)> FetchDoctorInfoAsync(
+        private async Task<(string? DoctorName, string? Specialization, string? PatientName, string? DoctorProfileImageUrl)> FetchDoctorInfoAsync(
             Guid doctorId,
             Guid patientId,
             CancellationToken cancellationToken)
@@ -343,7 +375,7 @@ namespace CareService.Application.Services
                     cancellationToken);
 
                 if (profile == null)
-                    return (null, null, null);
+                    return (null, null, null, null);
 
                 var doctorName =
                     $"{profile.Doctor?.FirstName} {profile.Doctor?.LastName}".Trim();
@@ -354,7 +386,8 @@ namespace CareService.Application.Services
                 return (
                     string.IsNullOrWhiteSpace(doctorName) ? null : doctorName,
                     profile.Doctor?.SpecializationName,
-                    string.IsNullOrWhiteSpace(patientName) ? null : patientName);
+                    string.IsNullOrWhiteSpace(patientName) ? null : patientName,
+                    profile.Doctor?.ProfileImageUrl);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -363,7 +396,7 @@ namespace CareService.Application.Services
             catch
             {
                 // Doctor info is best-effort; never fail the prescription response.
-                return (null, null, null);
+                return (null, null, null, null);
             }
         }
     }

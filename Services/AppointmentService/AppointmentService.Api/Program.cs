@@ -1,5 +1,7 @@
 
 using CareBridge.Shared.Middlewares;
+using CareBridge.Shared.Responses;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 using AppointmentService.Infrastructure;
@@ -109,12 +111,49 @@ builder.Services.AddAuthentication(options =>
             return Task.CompletedTask;
         },
 
-        OnChallenge = context =>
+        // Standardized unauthorized response (401)
+        OnChallenge = async context =>
         {
             Console.WriteLine(
                 $"JWT Challenge: {context.Error} - {context.ErrorDescription}");
 
-            return Task.CompletedTask;
+            context.HandleResponse();
+
+            context.Response.StatusCode =
+                StatusCodes.Status401Unauthorized;
+
+            var response = ApiResponse<object>.Fail(
+                new[]
+                {
+                    "A valid access token is required."
+                },
+                "Unauthorized",
+                HttpStatusCode.Unauthorized);
+
+            await context.Response.WriteAsJsonAsync(
+                response,
+                cancellationToken:
+                    context.HttpContext.RequestAborted);
+        },
+
+        // Standardized forbidden response (403)
+        OnForbidden = async context =>
+        {
+            context.Response.StatusCode =
+                StatusCodes.Status403Forbidden;
+
+            var response = ApiResponse<object>.Fail(
+                new[]
+                {
+                    "You do not have permission to perform this action."
+                },
+                "Forbidden",
+                HttpStatusCode.Forbidden);
+
+            await context.Response.WriteAsJsonAsync(
+                response,
+                cancellationToken:
+                    context.HttpContext.RequestAborted);
         }
     };
 });
