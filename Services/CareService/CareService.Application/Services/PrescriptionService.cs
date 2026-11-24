@@ -8,6 +8,8 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using CareBridge.Contracts.Messaging;
+
 
 namespace CareService.Application.Services
 {
@@ -15,20 +17,20 @@ namespace CareService.Application.Services
     {
         private readonly IPrescriptionRepository _prescriptionRepository;
         private readonly IConsultationRepository _consultationRepository;
-        private readonly IPrescriptionPdfService _prescriptionPdfService;
+        private readonly IMessagePublisher _messagePublisher;
         private readonly IUserProfileClient _userProfileClient;
         private readonly IMapper _mapper;
         private readonly ILogger<PrescriptionService> _logger;
         public PrescriptionService(IPrescriptionRepository prescriptionRepository , 
             IConsultationRepository consultationRepository,
-            IPrescriptionPdfService prescriptionPdfService,
+            IMessagePublisher messagePublisher,
             IUserProfileClient userProfileClient,
             IMapper mapper,
             ILogger<PrescriptionService> logger)
         {
             _prescriptionRepository = prescriptionRepository;
             _consultationRepository = consultationRepository;
-            _prescriptionPdfService = prescriptionPdfService;
+            _messagePublisher = messagePublisher;
             _userProfileClient = userProfileClient;
             _mapper = mapper;
             _logger = logger;
@@ -138,20 +140,24 @@ namespace CareService.Application.Services
 
             try
             {
-                await _prescriptionPdfService.GenerateAndStoreAsync(
-                    prescription.Id,
-                    doctorId,
-                    "Doctor",
+                await _messagePublisher.PublishAsync(
+                    new PrescriptionPdfRequested(prescription.Id),
                     cancellationToken);
+
+                _logger.LogInformation(
+                    "PDF generation requested for prescription {PrescriptionId}",
+                    prescription.Id);
             }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            catch (OperationCanceledException)
+                when (cancellationToken.IsCancellationRequested)
             {
                 throw;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex,
-                    "Prescription {PrescriptionId} was created but PDF generation failed.",
+                _logger.LogError(
+                    ex,
+                    "Prescription {PrescriptionId} saved, but RabbitMQ publishing failed.",
                     prescription.Id);
             }
 

@@ -8,6 +8,10 @@ namespace CareService.Application.Interfaces
             string role,
             CancellationToken cancellationToken);
 
+        Task GenerateInternalAsync(
+            Guid prescriptionId,
+            CancellationToken cancellationToken);
+
         Task<byte[]> GetPdfAsync(
             Guid prescriptionId,
             Guid userId,

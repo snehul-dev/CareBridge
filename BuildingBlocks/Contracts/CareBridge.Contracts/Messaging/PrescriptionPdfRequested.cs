@@ -4,7 +4,7 @@ using System.Text;
 
 namespace CareBridge.Contracts.Messaging
 {
-    internal class PrescriptionPdfRequested
-    {
-    }
+    public record PrescriptionPdfRequested(Guid PrescriptionId);
+    
+    
 }

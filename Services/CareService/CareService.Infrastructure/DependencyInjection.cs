@@ -5,6 +5,7 @@ using CareService.Application.Interfaces;
 using CareService.Application.Interfaces.Services;
 using CareService.Infrastructure.Configurations;
 using CareService.Infrastructure.ExternalServices;
+using CareService.Infrastructure.Messaging;
 using CareService.Infrastructure.Pdf;
 using CareService.Infrastructure.Persistence;
 using CareService.Infrastructure.Repositories;
@@ -12,6 +13,7 @@ using CareService.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using RabbitMQ.Client;
 
 namespace CareService.Infrastructure
 {
@@ -33,6 +35,8 @@ namespace CareService.Infrastructure
             services.Configure<AwsSettings>(
                 configuration.GetSection("AWS")
                 );
+
+
             services.AddSingleton<IAmazonS3>(sp =>
             {
                 var settings = sp.GetRequiredService<
@@ -55,6 +59,25 @@ namespace CareService.Infrastructure
 
                 return new AmazonS3Client(config);
             });
+
+            services.AddSingleton<IConnection>(sp =>
+            {
+                var factory = new ConnectionFactory
+                {
+                    HostName = configuration["RabbitMQ:HostName"] ?? "localhost",
+                    Port = configuration.GetValue<int>("RabbitMQ:Port", 5672),
+                    UserName = configuration["RabbitMQ:UserName"] ?? "guest",
+                    Password = configuration["RabbitMQ:Password"] ?? "guest",
+                    AutomaticRecoveryEnabled = true
+                };
+
+                return factory.CreateConnectionAsync()
+                    .GetAwaiter()
+                    .GetResult();
+            });
+
+            services.AddScoped<IMessagePublisher, RabbitMqPublisher>();
+            services.AddHostedService<PrescriptionPdfConsumer>();
 
             services.AddScoped<IFileStorageService, S3FileStorageService>();
             services.AddScoped<IPrescriptionPdfGenerator, PrescriptionPdfGenerator>();

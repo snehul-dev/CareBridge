@@ -1,6 +1,7 @@
 
 services:
- 
+
+
   apigateway:
     build:
       context: .
@@ -23,6 +24,25 @@ services:
         condition: service_started
 
 
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: carebridge-rabbitmq
+    hostname: carebridge-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
   postgres:
     image: postgres:17
     container_name: carebridge-postgres
@@ -39,6 +59,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
 
   appointment-postgres:
     image: postgres:17
@@ -57,8 +78,7 @@ services:
       timeout: 5s
       retries: 5
 
-      
-  # CARE SERVICE DATABASE
+
   care-postgres:
     image: postgres:17
     container_name: carebridge-care-postgres
@@ -76,6 +96,7 @@ services:
       timeout: 5s
       retries: 5
 
+ 
   userservice:
     build:
       context: .
@@ -84,14 +105,18 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"
+
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+
       Jwt__Secret: ${JWT_SECRET}
       Jwt__Issuer: ${JWT_ISSUER}
       Jwt__Audience: ${JWT_AUDIENCE}
       Jwt__AccessTokenMinutes: ${JWT_ACCESS_TOKEN_MINUTES}
+
       AdminSeed__Email: ${ADMIN_SEED_EMAIL}
       AdminSeed__Password: ${ADMIN_SEED_PASSWORD}
       AdminSeed__PhoneNumber: ${ADMIN_SEED_PHONE}
+
       ServiceJwt__Issuer: ${SERVICE_JWT_ISSUER}
       ServiceJwt__Audience: ${SERVICE_JWT_AUDIENCE}
       ServiceJwt__SecretKey: ${SERVICE_JWT_SECRET}
@@ -100,11 +125,13 @@ services:
       AWS__BucketName: ${AWS_BUCKET_NAME}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+
     ports:
       - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
+
 
   appointmentservice:
     image: carebridge-appointmentservice:latest
@@ -115,7 +142,9 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"
+
       ConnectionStrings__DefaultConnection: "Host=appointment-postgres;Port=5432;Database=${APPOINTMENT_POSTGRES_DB};Username=${APPOINTMENT_POSTGRES_USER};Password=${APPOINTMENT_POSTGRES_PASSWORD}"
+
       Services__UserService__BaseUrl: "http://userservice:8080"
 
       Jwt__Secret: ${JWT_SECRET}
@@ -123,15 +152,14 @@ services:
       Jwt__Audience: ${JWT_AUDIENCE}
       Jwt__AccessTokenMinutes: ${JWT_ACCESS_TOKEN_MINUTES}
 
-      
-
     ports:
       - "8081:8080"
     depends_on:
       appointment-postgres:
         condition: service_healthy
 
-# CARE SERVICE
+
+  # CARE SERVICE
   careservice:
     image: carebridge-careservice:latest
     build:
@@ -161,6 +189,12 @@ services:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
 
+      # RabbitMQ Configuration
+      RabbitMQ__HostName: rabbitmq
+      RabbitMQ__Port: "5672"
+      RabbitMQ__UserName: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+
     ports:
       - "8082:8080"
     depends_on:
@@ -170,8 +204,12 @@ services:
         condition: service_started
       appointmentservice:
         condition: service_started
+      rabbitmq:
+        condition: service_healthy
+
 
 volumes:
   postgres_data:
   appointment_postgres_data:
   care_postgres_data:
+  rabbitmq_data:

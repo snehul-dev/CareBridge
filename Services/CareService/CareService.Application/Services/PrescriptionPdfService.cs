@@ -171,5 +171,44 @@ namespace CareService.Application.Services
                     .ToList()
             };
         }
+
+        public async Task GenerateInternalAsync(Guid prescriptionId, CancellationToken cancellationToken)
+        {
+            var prescription = await _prescriptionRepository.GetByIdAsync(
+                    prescriptionId,
+                    cancellationToken);
+
+            if (prescription == null)
+                throw new NotFoundException("Prescription not found.");
+
+            // Already generated? Skip duplicate processing.
+            if (!string.IsNullOrWhiteSpace(prescription.PdfStorageKey))
+                return;
+
+            var profile = await _userProfileClient.GetPrescriptionProfileAsync(
+                prescription.DoctorId,
+                prescription.PatientId,
+                cancellationToken);
+
+            if (profile == null)
+                throw new NotFoundException(
+                    "Doctor or patient profile not found.");
+
+            var pdfDto = BuildPdfDto(prescription, profile);
+
+            var pdfBytes = _pdfGenerator.Generate(pdfDto);
+
+            var storageKey = await _fileStorageService.SaveAsync(
+                pdfBytes,
+                $"{prescription.Id}.pdf",
+                "application/pdf",
+                "prescriptions",
+                cancellationToken);
+
+            prescription.PdfStorageKey = storageKey;
+            prescription.PdfGeneratedAt = DateTimeOffset.UtcNow;
+
+            await _prescriptionRepository.SaveChangesAsync(cancellationToken);
+        }
     }
 }
