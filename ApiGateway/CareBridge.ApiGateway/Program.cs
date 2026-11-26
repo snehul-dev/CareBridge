@@ -42,14 +42,16 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
+var allowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? Array.Empty<string>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendPolicy", policy =>
     {
         policy
-            .WithOrigins(
-                "http://localhost:5173",
-                "http://127.0.0.1:5173")
+            .WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -69,7 +71,8 @@ app.Use(async (context, next) =>
 {
     var path = context.Request.Path.Value ?? string.Empty;
 
-    if (path.Contains("/internal/", StringComparison.OrdinalIgnoreCase))
+    if (path.Contains("/internal/", StringComparison.OrdinalIgnoreCase) ||
+        path.EndsWith("/internal", StringComparison.OrdinalIgnoreCase))
     {
         await WriteGatewayErrorAsync(
             context,

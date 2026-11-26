@@ -24,6 +24,8 @@ secrets.json
 # Environment files
 .env
 .env.*
+!.env.example
+!.env.production.example
 
 # Node / React
 node_modules/

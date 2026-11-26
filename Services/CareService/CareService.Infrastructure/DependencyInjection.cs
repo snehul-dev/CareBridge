@@ -1,5 +1,4 @@
-﻿
-using Amazon;
+﻿using Amazon;
 using Amazon.S3;
 using CareService.Application.Interfaces;
 using CareService.Application.Interfaces.Services;
@@ -13,6 +12,8 @@ using CareService.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Hosting;
 using RabbitMQ.Client;
 
 namespace CareService.Infrastructure
@@ -32,15 +33,18 @@ namespace CareService.Infrastructure
             services.AddDbContext<CareDbContext>(options =>
                 options.UseNpgsql(connectionString));
 
+            // AWS Settings
             services.Configure<AwsSettings>(
-                configuration.GetSection("AWS")
-                );
+                configuration.GetSection("AWS"));
 
-
+            // AWS S3 Authentication
             services.AddSingleton<IAmazonS3>(sp =>
             {
                 var settings = sp.GetRequiredService<
-                    Microsoft.Extensions.Options.IOptions<AwsSettings>>().Value;
+                    IOptions<AwsSettings>>().Value;
+
+                var environment =
+                    sp.GetRequiredService<IHostEnvironment>();
 
                 var config = new AmazonS3Config
                 {
@@ -48,26 +52,40 @@ namespace CareService.Infrastructure
                         settings.Region)
                 };
 
-                if (!string.IsNullOrWhiteSpace(settings.AccessKey) &&
-                    !string.IsNullOrWhiteSpace(settings.SecretKey))
+                // Local Development - Access Key and Secret Key
+                if (environment.IsDevelopment())
                 {
-                    return new AmazonS3Client(
-                        settings.AccessKey.Trim(),
-                        settings.SecretKey.Trim(),
-                        config);
+                    if (!string.IsNullOrWhiteSpace(settings.AccessKey) &&
+                        !string.IsNullOrWhiteSpace(settings.SecretKey))
+                    {
+                        return new AmazonS3Client(
+                            settings.AccessKey.Trim(),
+                            settings.SecretKey.Trim(),
+                            config);
+                    }
                 }
 
+                // Production - Default Credential Chain (EC2 IAM Role)
                 return new AmazonS3Client(config);
             });
 
+            // RabbitMQ Connection
             services.AddSingleton<IConnection>(sp =>
             {
                 var factory = new ConnectionFactory
                 {
-                    HostName = configuration["RabbitMQ:HostName"] ?? "localhost",
-                    Port = configuration.GetValue<int>("RabbitMQ:Port", 5672),
-                    UserName = configuration["RabbitMQ:UserName"] ?? "guest",
-                    Password = configuration["RabbitMQ:Password"] ?? "guest",
+                    HostName = configuration["RabbitMQ:HostName"]
+                        ?? "localhost",
+
+                    Port = configuration.GetValue<int>(
+                        "RabbitMQ:Port", 5672),
+
+                    UserName = configuration["RabbitMQ:UserName"]
+                        ?? "guest",
+
+                    Password = configuration["RabbitMQ:Password"]
+                        ?? "guest",
+
                     AutomaticRecoveryEnabled = true
                 };
 
@@ -76,14 +94,16 @@ namespace CareService.Infrastructure
                     .GetResult();
             });
 
+            // RabbitMQ Publisher and Consumer
             services.AddScoped<IMessagePublisher, RabbitMqPublisher>();
             services.AddHostedService<PrescriptionPdfConsumer>();
 
+            // File Storage and PDF Generation
             services.AddScoped<IFileStorageService, S3FileStorageService>();
             services.AddScoped<IPrescriptionPdfGenerator, PrescriptionPdfGenerator>();
 
             // Repositories
-            services.AddScoped<IConsultationRepository,ConsultationRepository>();
+            services.AddScoped<IConsultationRepository, ConsultationRepository>();
             services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
             services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
             services.AddScoped<ILabOrderRepository, LabOrderRepository>();
@@ -130,6 +150,7 @@ namespace CareService.Infrastructure
                 })
                 .AddHttpMessageHandler<AuthorizationHeaderHandler>();
 
+            // User Profile Client
             services.AddHttpClient<
                 IUserProfileClient,
                 UserProfileClient>(
@@ -139,7 +160,7 @@ namespace CareService.Infrastructure
                 })
                 .AddHttpMessageHandler<ServiceTokenHandler>();
 
-            // Internal lab directory (service-to-service)
+            // Internal Lab Directory (Service-to-Service)
             services.AddHttpClient<
                 IInternalLabClient,
                 InternalLabClient>(
@@ -149,7 +170,7 @@ namespace CareService.Infrastructure
                 })
                 .AddHttpMessageHandler<ServiceTokenHandler>();
 
-            // Appointment statistics (service-to-service)
+            // Appointment Statistics (Service-to-Service)
             services.AddHttpClient<
                 IAppointmentStatsClient,
                 AppointmentStatsClient>(
@@ -160,7 +181,7 @@ namespace CareService.Infrastructure
                 })
                 .AddHttpMessageHandler<ServiceTokenHandler>();
 
-            // User statistics (service-to-service)
+            // User Statistics (Service-to-Service)
             services.AddHttpClient<
                 IUserStatsClient,
                 UserStatsClient>(

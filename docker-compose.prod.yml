@@ -1,0 +1,151 @@
+services:
+
+  apigateway:
+    build:
+      context: .
+      dockerfile: ApiGateway/CareBridge.ApiGateway/Dockerfile
+    container_name: carebridge-apigateway
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+
+      Jwt__Secret: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+
+      Cors__AllowedOrigins__0: ${FRONTEND_URL}
+
+    ports:
+      - "8090:8080"
+
+    depends_on:
+      userservice:
+        condition: service_started
+      appointmentservice:
+        condition: service_started
+      careservice:
+        condition: service_started
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: carebridge-rabbitmq
+    hostname: carebridge-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  userservice:
+    build:
+      context: .
+      dockerfile: Services/UserService/UserService.Api/Dockerfile
+    container_name: carebridge-userservice
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+
+      ConnectionStrings__DefaultConnection: "Host=${RDS_HOST};Port=${RDS_PORT};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SSL Mode=VerifyFull;Root Certificate=/certs/rds-ca.pem"
+
+      Jwt__Secret: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+      Jwt__AccessTokenMinutes: ${JWT_ACCESS_TOKEN_MINUTES}
+
+      AdminSeed__Email: ${ADMIN_SEED_EMAIL}
+      AdminSeed__Password: ${ADMIN_SEED_PASSWORD}
+      AdminSeed__PhoneNumber: ${ADMIN_SEED_PHONE}
+
+      ServiceJwt__Issuer: ${SERVICE_JWT_ISSUER}
+      ServiceJwt__Audience: ${SERVICE_JWT_AUDIENCE}
+      ServiceJwt__SecretKey: ${SERVICE_JWT_SECRET}
+
+      AWS__Region: ${AWS_REGION}
+      AWS__BucketName: ${AWS_BUCKET_NAME}
+
+    volumes:
+      - ./certs/rds-ca.pem:/certs/rds-ca.pem:ro
+
+  appointmentservice:
+    image: carebridge-appointmentservice:latest
+    build:
+      context: .
+      dockerfile: Services/AppointmentService/AppointmentService.Api/Dockerfile
+    container_name: carebridge-appointmentservice
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+
+      ConnectionStrings__DefaultConnection: "Host=${RDS_HOST};Port=${RDS_PORT};Database=${APPOINTMENT_POSTGRES_DB};Username=${APPOINTMENT_POSTGRES_USER};Password=${APPOINTMENT_POSTGRES_PASSWORD};SSL Mode=VerifyFull;Root Certificate=/certs/rds-ca.pem"
+
+      Services__UserService__BaseUrl: "http://userservice:8080/"
+
+      Jwt__Secret: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+      Jwt__AccessTokenMinutes: ${JWT_ACCESS_TOKEN_MINUTES}
+
+    volumes:
+      - ./certs/rds-ca.pem:/certs/rds-ca.pem:ro
+
+    depends_on:
+      userservice:
+        condition: service_started
+
+  careservice:
+    image: carebridge-careservice:latest
+    build:
+      context: .
+      dockerfile: Services/CareService/CareService.Api/Dockerfile
+    container_name: carebridge-careservice
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+
+      ConnectionStrings__DefaultConnection: "Host=${RDS_HOST};Port=${RDS_PORT};Database=${CARE_POSTGRES_DB};Username=${CARE_POSTGRES_USER};Password=${CARE_POSTGRES_PASSWORD};SSL Mode=VerifyFull;Root Certificate=/certs/rds-ca.pem"
+
+      Services__UserService__BaseUrl: "http://userservice:8080/"
+      Services__AppointmentService__BaseUrl: "http://appointmentservice:8080/"
+
+      Jwt__Secret: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+      Jwt__AccessTokenMinutes: ${JWT_ACCESS_TOKEN_MINUTES}
+
+      ServiceJwt__Issuer: ${SERVICE_JWT_ISSUER}
+      ServiceJwt__Audience: ${SERVICE_JWT_AUDIENCE}
+      ServiceJwt__SecretKey: ${SERVICE_JWT_SECRET}
+
+      AWS__Region: ${AWS_REGION}
+      AWS__BucketName: ${AWS_BUCKET_NAME}
+
+      RabbitMQ__HostName: rabbitmq
+      RabbitMQ__Port: "5672"
+      RabbitMQ__UserName: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+
+    volumes:
+      - ./certs/rds-ca.pem:/certs/rds-ca.pem:ro
+
+    depends_on:
+      userservice:
+        condition: service_started
+      appointmentservice:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+
+volumes:
+  rabbitmq_data:

@@ -5,7 +5,10 @@
 **/.git/
 **/TestResults/
 .vscode/
+
 .env
 **/.env
+.env.*
+**/.env.*
 *.user
 *.suo
